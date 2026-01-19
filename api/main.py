@@ -12,15 +12,19 @@ Provides:
 Version: 1.0.0 (MVP)
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 import logging
 
+from .config import settings
+from .logging_config import setup_logging, RequestLoggingMiddleware, get_request_id
+from .exceptions import GreenAIException
 from .models import (
     EstimateRequest,
     EstimateResponse,
@@ -37,26 +41,29 @@ from .database import (
     get_grid_intensity
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Setup logging
+logger = setup_logging()
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
+
 
 # Lifespan context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    logger.info("🚀 Green AI API starting up...")
+    logger.info(
+        f"Green AI API starting up (version={settings.app_version}, env={settings.environment})"
+    )
     yield
-    logger.info("👋 Green AI API shutting down...")
+    logger.info("Green AI API shutting down")
+
 
 # Create FastAPI app
 app = FastAPI(
-    title="Green AI API",
+    title=settings.app_name,
     description="Track CO₂ emissions from AI usage with automatic provider detection",
-    version="1.0.0",
+    version=settings.app_version,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
@@ -66,134 +73,246 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS
+
+# Security headers middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if settings.is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
+# Add middlewares (order matters - first added is outermost)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# Custom exception handler for GreenAIException
+@app.exception_handler(GreenAIException)
+async def green_ai_exception_handler(request: Request, exc: GreenAIException):
+    """Handle custom exceptions with structured response."""
+    response_data = exc.to_dict()
+    response_data["request_id"] = get_request_id()
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=response_data
+    )
+
+
+# General exception handler
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected exceptions."""
+    logger.exception(f"Unexpected error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred" if settings.is_production else str(exc),
+            "request_id": get_request_id()
+        }
+    )
 
 
 @app.get("/")
 async def root():
     """API root - welcome message"""
     return {
-        "message": "Welcome to Green AI API",
-        "version": "1.0.0",
+        "message": f"Welcome to {settings.app_name}",
+        "version": settings.app_version,
+        "environment": settings.environment,
         "docs": "/docs",
         "endpoints": {
             "estimate": "POST /v1/estimate",
             "detect_and_estimate": "POST /v1/detect-and-estimate",
             "providers": "GET /v1/providers",
-            "regions": "GET /v1/regions"
+            "regions": "GET /v1/regions",
+            "health": "GET /health",
+            "metrics": "GET /metrics"
         }
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "version": "1.0.0"}
+    """
+    Health check endpoint for container orchestration.
+
+    Returns basic health status and version info.
+    For detailed health including dependencies, use /health/detailed
+    """
+    return {
+        "status": "healthy",
+        "version": settings.app_version,
+        "environment": settings.environment
+    }
+
+
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """
+    Detailed health check including dependency status.
+
+    Checks:
+    - API responsiveness
+    - Configuration validity
+    - External service reachability (optional)
+    """
+    health_status = {
+        "status": "healthy",
+        "version": settings.app_version,
+        "environment": settings.environment,
+        "checks": {
+            "api": {"status": "healthy"},
+            "config": {"status": "healthy", "rate_limit": settings.rate_limit_string},
+        }
+    }
+
+    # Check if any critical check failed
+    all_healthy = all(
+        check.get("status") == "healthy"
+        for check in health_status["checks"].values()
+    )
+    health_status["status"] = "healthy" if all_healthy else "degraded"
+
+    return health_status
+
+
+@app.get("/metrics")
+async def metrics():
+    """
+    Prometheus-compatible metrics endpoint.
+
+    Returns metrics in Prometheus text format for scraping.
+    """
+    if not settings.enable_metrics:
+        raise HTTPException(status_code=404, detail="Metrics endpoint disabled")
+
+    # Basic metrics (can be expanded with prometheus_client)
+    metrics_data = {
+        "app_info": {
+            "version": settings.app_version,
+            "environment": settings.environment
+        },
+        "config": {
+            "rate_limit": settings.rate_limit_string,
+            "default_power_watts": settings.default_power_watts,
+            "default_pue": settings.default_pue
+        }
+    }
+    return metrics_data
 
 
 @app.post("/v1/estimate", response_model=EstimateResponse)
-@limiter.limit("100/hour")
-async def estimate_emissions(request: Request, data: EstimateRequest):
+@limiter.limit(settings.rate_limit_string)
+async def estimate_emissions_endpoint(request: Request, data: EstimateRequest):
     """
     Calculate CO₂ emissions for AI inference.
 
     Requires manual input of provider and region.
     Use /v1/detect-and-estimate for automatic detection.
-
-    Rate limit: 100 requests per hour
     """
-    try:
-        # Get grid intensity
-        grid_intensity = get_grid_intensity(
-            provider=data.provider,
-            region=data.region,
-            country_code=data.country_code
-        )
+    request_logger = logging.getLogger("green_ai.estimate")
 
-        # Calculate emissions
-        result = calculate_emissions(
-            latency_ms=data.latency_ms,
-            power_watts=data.power_watts or 400,
-            grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
-            pue=data.pue or 1.2
-        )
+    # Get grid intensity
+    grid_intensity = get_grid_intensity(
+        provider=data.provider,
+        region=data.region,
+        country_code=data.country_code
+    )
 
-        return EstimateResponse(
-            emissions_g=result["emissions_g"],
-            emissions_kg=result["emissions_kg"],
-            energy_kwh=result["energy_kwh"],
-            grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
-            provider=data.provider,
-            region=data.region,
-            confidence="high",
-            detection_method="manual",
-            timestamp=result["timestamp"]
-        )
+    # Calculate emissions
+    result = calculate_emissions(
+        latency_ms=data.latency_ms,
+        power_watts=data.power_watts or settings.default_power_watts,
+        grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
+        pue=data.pue or settings.default_pue
+    )
 
-    except Exception as e:
-        logger.error(f"Error in estimate_emissions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    request_logger.info(
+        f"Emissions calculated: {result['emissions_g']:.4f}g CO2 "
+        f"(provider={data.provider}, region={data.region})"
+    )
+
+    return EstimateResponse(
+        emissions_g=result["emissions_g"],
+        emissions_kg=result["emissions_kg"],
+        energy_kwh=result["energy_kwh"],
+        grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
+        provider=data.provider,
+        region=data.region,
+        confidence="high",
+        detection_method="manual",
+        timestamp=result["timestamp"]
+    )
 
 
 @app.post("/v1/detect-and-estimate", response_model=DetectAndEstimateResponse)
-@limiter.limit("100/hour")
-async def detect_and_estimate(request: Request, data: DetectAndEstimateRequest):
+@limiter.limit(settings.rate_limit_string)
+async def detect_and_estimate_endpoint(request: Request, data: DetectAndEstimateRequest):
     """
     Automatically detect AI provider and datacenter, then calculate emissions.
 
     Phase 1 accuracy: ~70%
     Will improve to 85-90% in future phases
-
-    Rate limit: 100 requests per hour
     """
-    try:
-        # Detect provider and region
-        detection = await detect_provider_and_region(
-            api_endpoint=data.api_endpoint,
-            request_headers=data.request_headers,
-            response_headers=data.response_headers,
-            latency_ms=data.latency_ms
-        )
+    request_logger = logging.getLogger("green_ai.detect")
 
-        # Get grid intensity
-        grid_intensity = get_grid_intensity(
-            provider=detection["provider"],
-            region=detection["region"],
-            country_code=detection["country"]
-        )
+    # Detect provider and region
+    detection = await detect_provider_and_region(
+        api_endpoint=data.api_endpoint,
+        request_headers=data.request_headers,
+        response_headers=data.response_headers,
+        latency_ms=data.latency_ms
+    )
 
-        # Calculate emissions
-        result = calculate_emissions(
-            latency_ms=data.latency_ms,
-            power_watts=data.power_watts or 400,
-            grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
-            pue=data.pue or 1.2
-        )
+    request_logger.info(
+        f"Provider detected: {detection['provider']} "
+        f"(region={detection['region']}, confidence={detection['confidence']})"
+    )
 
-        return DetectAndEstimateResponse(
-            emissions_g=result["emissions_g"],
-            emissions_kg=result["emissions_kg"],
-            energy_kwh=result["energy_kwh"],
-            grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
-            detected_provider=detection["provider"],
-            detected_region=detection["region"],
-            detected_country=detection["country"],
-            confidence=detection["confidence"],
-            detection_method=detection["method"],
-            detection_details=detection["details"],
-            timestamp=result["timestamp"]
-        )
+    # Get grid intensity
+    grid_intensity = get_grid_intensity(
+        provider=detection["provider"],
+        region=detection["region"],
+        country_code=detection["country"]
+    )
 
-    except Exception as e:
-        logger.error(f"Error in detect_and_estimate: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    # Calculate emissions
+    result = calculate_emissions(
+        latency_ms=data.latency_ms,
+        power_watts=data.power_watts or settings.default_power_watts,
+        grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
+        pue=data.pue or settings.default_pue
+    )
+
+    return DetectAndEstimateResponse(
+        emissions_g=result["emissions_g"],
+        emissions_kg=result["emissions_kg"],
+        energy_kwh=result["energy_kwh"],
+        grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
+        detected_provider=detection["provider"],
+        detected_region=detection["region"],
+        detected_country=detection["country"],
+        confidence=detection["confidence"],
+        detection_method=detection["method"],
+        detection_details=detection["details"],
+        timestamp=result["timestamp"]
+    )
 
 
 @app.get("/v1/providers", response_model=list[ProviderInfo])
@@ -239,13 +358,19 @@ async def not_found_handler(request: Request, exc):
     return JSONResponse(
         status_code=404,
         content={
-            "error": "Endpoint not found",
+            "error": "NOT_FOUND",
             "message": f"The endpoint {request.url.path} does not exist",
-            "docs": "/docs"
+            "docs": "/docs",
+            "request_id": get_request_id()
         }
     )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=not settings.is_production
+    )

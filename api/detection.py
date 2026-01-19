@@ -12,11 +12,43 @@ Phase 2: Will add ML and advanced techniques for 85%+ accuracy
 
 import socket
 import httpx
+import asyncio
 from urllib.parse import urlparse
 from typing import Optional
+from functools import lru_cache
+from datetime import datetime, timedelta
 import logging
 
+from .config import settings
+
 logger = logging.getLogger(__name__)
+
+# Simple in-memory cache for IP geolocation results
+_ip_cache: dict[str, tuple[dict, datetime]] = {}
+
+
+def _get_cached_ip_result(ip: str) -> Optional[dict]:
+    """Get cached IP geolocation result if not expired."""
+    if ip in _ip_cache:
+        result, cached_at = _ip_cache[ip]
+        if datetime.now() - cached_at < timedelta(seconds=settings.ip_geolocation_cache_ttl):
+            logger.debug(f"IP cache hit for {ip}")
+            return result
+        else:
+            # Remove expired entry
+            del _ip_cache[ip]
+    return None
+
+
+def _cache_ip_result(ip: str, result: dict) -> None:
+    """Cache IP geolocation result."""
+    _ip_cache[ip] = (result, datetime.now())
+    # Limit cache size to prevent memory issues
+    if len(_ip_cache) > 1000:
+        # Remove oldest entries
+        sorted_items = sorted(_ip_cache.items(), key=lambda x: x[1][1])
+        for key, _ in sorted_items[:100]:
+            del _ip_cache[key]
 
 
 async def detect_provider_and_region(
@@ -218,36 +250,64 @@ async def _detect_by_ip(hostname: str) -> Optional[dict]:
     Use IP geolocation to estimate location.
 
     Confidence: ~65% (IP shows edge/proxy, not always compute location)
+    Includes retry logic and caching.
     """
     try:
         # Resolve hostname to IP
         ip = socket.gethostbyname(hostname)
 
-        # Use free IP geolocation API
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,lat,lon,isp",
-                timeout=5.0
-            )
+        # Check cache first
+        cached_result = _get_cached_ip_result(ip)
+        if cached_result:
+            return cached_result
 
-            if response.status_code == 200:
-                data = response.json()
+        # Retry configuration
+        max_retries = 2
+        retry_delay = 0.5
 
-                if data.get("status") == "success":
-                    return {
-                        "provider": "detected-via-ip",
-                        "region": data.get("city", "unknown").lower(),
-                        "country": data.get("countryCode", "unknown"),
-                        "confidence": 0.65,
-                        "method": "ip-geolocation",
-                        "details": {
-                            "ip": ip,
-                            "city": data.get("city"),
-                            "coordinates": [data.get("lat"), data.get("lon")],
-                            "isp": data.get("isp")
-                        }
-                    }
+        for attempt in range(max_retries + 1):
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(
+                        f"http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,lat,lon,isp",
+                        timeout=settings.ip_geolocation_timeout
+                    )
 
+                    if response.status_code == 200:
+                        data = response.json()
+
+                        if data.get("status") == "success":
+                            result = {
+                                "provider": "detected-via-ip",
+                                "region": data.get("city", "unknown").lower(),
+                                "country": data.get("countryCode", "unknown"),
+                                "confidence": 0.65,
+                                "method": "ip-geolocation",
+                                "details": {
+                                    "ip": ip,
+                                    "city": data.get("city"),
+                                    "coordinates": [data.get("lat"), data.get("lon")],
+                                    "isp": data.get("isp")
+                                }
+                            }
+                            # Cache the result
+                            _cache_ip_result(ip, result)
+                            return result
+
+                    # If we got a response but it wasn't successful, don't retry
+                    break
+
+            except (httpx.TimeoutException, httpx.ConnectError) as e:
+                if attempt < max_retries:
+                    logger.warning(
+                        f"IP geolocation attempt {attempt + 1} failed for {hostname}: {e}. Retrying..."
+                    )
+                    await asyncio.sleep(retry_delay * (attempt + 1))
+                else:
+                    logger.warning(f"IP geolocation failed for {hostname} after {max_retries + 1} attempts: {e}")
+
+    except socket.gaierror as e:
+        logger.warning(f"DNS resolution failed for {hostname}: {e}")
     except Exception as e:
         logger.warning(f"IP geolocation failed for {hostname}: {e}")
 
