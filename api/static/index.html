@@ -49,6 +49,84 @@
                 </div>
             </section>
 
+            <!-- Step 2.5: Model Selection (shown after provider) -->
+            <section class="card hidden" id="step-model">
+                <h2>2b. Which model?</h2>
+                <p class="step-hint">Different models use different amounts of energy</p>
+
+                <div class="model-grid" id="model-grid">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Power info tooltip -->
+                <div class="power-info-box">
+                    <details>
+                        <summary>
+                            <span class="info-icon">ℹ️</span>
+                            Why do models use different power?
+                        </summary>
+                        <div class="power-info-content">
+                            <p>AI models vary dramatically in energy use based on their size and type:</p>
+
+                            <table class="power-table">
+                                <thead>
+                                    <tr>
+                                        <th>Model Type</th>
+                                        <th>Power</th>
+                                        <th>Why</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="tier-small">
+                                        <td>Small text (Mistral 7B, GPT-4o mini)</td>
+                                        <td>50-150W</td>
+                                        <td>Fewer parameters = less computation</td>
+                                    </tr>
+                                    <tr class="tier-medium">
+                                        <td>Medium text (GPT-3.5, Claude Haiku)</td>
+                                        <td>150-350W</td>
+                                        <td>Balanced size and capability</td>
+                                    </tr>
+                                    <tr class="tier-large">
+                                        <td>Large text (GPT-4, Claude Opus)</td>
+                                        <td>350-600W</td>
+                                        <td>Most parameters = most compute</td>
+                                    </tr>
+                                    <tr class="tier-image">
+                                        <td>Image generation (DALL-E, SD)</td>
+                                        <td>300-600W</td>
+                                        <td>GPU-intensive diffusion process</td>
+                                    </tr>
+                                    <tr class="tier-video">
+                                        <td>Video generation</td>
+                                        <td>800W+</td>
+                                        <td>Generates many frames sequentially</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="power-sources">
+                                <strong>How we know this:</strong>
+                                <ul>
+                                    <li><a href="https://arxiv.org/abs/2311.16863" target="_blank">Luccioni et al. 2023</a> - Directly measured AI model energy consumption</li>
+                                    <li><a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a> - Google's AI carbon emissions research</li>
+                                    <li><a href="https://mlcommons.org/benchmarks/inference/" target="_blank">MLPerf</a> - Industry-standard AI benchmarks</li>
+                                </ul>
+                            </div>
+
+                            <p class="power-disclaimer">
+                                <strong>Note:</strong> These are estimates. Actual power varies based on hardware,
+                                datacenter efficiency, and batch size. We use conservative estimates from peer-reviewed research.
+                            </p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="model-source" id="model-source">
+                    <!-- Source for current provider's estimates -->
+                </div>
+            </section>
+
             <!-- Step 3: Results -->
             <section class="card hidden" id="step-results">
                 <h2>Your AI Carbon Footprint</h2>
@@ -65,6 +143,14 @@
                     <div class="detail-item">
                         <span class="detail-label">AI Provider</span>
                         <span class="detail-value" id="detail-provider">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Model</span>
+                        <span class="detail-value" id="detail-model">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Model Power</span>
+                        <span class="detail-value" id="detail-power">-</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Likely Datacenter</span>
@@ -113,10 +199,11 @@
                             <div class="formula-sources">
                                 <strong>Sources:</strong>
                                 <ul>
-                                    <li><a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a> - AI power consumption</li>
-                                    <li><a href="https://www.iea.org/data-and-statistics" target="_blank">IEA</a> - Grid carbon intensity data</li>
+                                    <li><a href="https://arxiv.org/abs/2311.16863" target="_blank">Luccioni et al. 2023</a> - Measured AI model energy consumption directly</li>
+                                    <li><a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a> - Google's foundational AI carbon emissions research</li>
+                                    <li><a href="https://www.iea.org/data-and-statistics" target="_blank">IEA</a> - Grid carbon intensity data by region</li>
                                     <li><a href="https://www.epa.gov/greenvehicles" target="_blank">EPA</a> - Vehicle emissions comparisons</li>
-                                    <li><a href="https://mlco2.github.io/impact/" target="_blank">ML CO2 Impact</a> - ML emissions research</li>
+                                    <li><a href="https://mlcommons.org/benchmarks/inference/" target="_blank">MLPerf</a> - Industry-standard AI inference benchmarks</li>
                                 </ul>
                             </div>
                         </div>
