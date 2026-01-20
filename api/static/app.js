@@ -19,14 +19,26 @@ const COUNTRY_NAMES = {
     'IN': 'India', 'CN': 'China'
 };
 
-// Provider display info
+// Provider display info - featured shows as cards, others in dropdown
 const PROVIDER_INFO = {
-    'openai': { name: 'OpenAI', hint: 'ChatGPT, GPT-4' },
-    'anthropic': { name: 'Claude', hint: 'Anthropic' },
-    'cohere': { name: 'Cohere', hint: 'Command, Embed' },
-    'huggingface': { name: 'Hugging Face', hint: 'Inference API' },
-    'azure-openai': { name: 'Azure OpenAI', hint: 'Microsoft Azure' },
-    'aws-bedrock': { name: 'AWS Bedrock', hint: 'Amazon' }
+    // Featured providers (shown as cards)
+    'openai': { name: 'OpenAI', hint: 'ChatGPT, GPT-4', featured: true },
+    'anthropic': { name: 'Claude', hint: 'Anthropic', featured: true },
+    'google': { name: 'Google Gemini', hint: 'Bard, Gemini Pro', featured: true },
+    'mistral': { name: 'Mistral AI', hint: 'Mistral, Mixtral', featured: true },
+    'perplexity': { name: 'Perplexity', hint: 'AI Search', featured: true },
+    'stability': { name: 'Stability AI', hint: 'Stable Diffusion', featured: true },
+    'replicate': { name: 'Replicate', hint: 'Open source models', featured: true },
+    // Additional providers (shown in dropdown)
+    'cohere': { name: 'Cohere', hint: 'Command, Embed', featured: false },
+    'huggingface': { name: 'Hugging Face', hint: 'Inference API', featured: false },
+    'azure-openai': { name: 'Azure OpenAI', hint: 'Microsoft Azure', featured: false },
+    'aws-bedrock': { name: 'AWS Bedrock', hint: 'Amazon', featured: false },
+    'meta-llama': { name: 'Meta Llama', hint: 'Llama 3', featured: false },
+    'midjourney': { name: 'Midjourney', hint: 'Image generation', featured: false },
+    'deepseek': { name: 'DeepSeek', hint: 'DeepSeek Coder', featured: false },
+    'xai': { name: 'xAI Grok', hint: 'Grok', featured: false },
+    'together': { name: 'Together AI', hint: 'Open source hosting', featured: false }
 };
 
 // Usage scenarios with typical parameters
@@ -196,21 +208,48 @@ function resetLocation() {
 // Render provider cards
 function renderProviders() {
     const grid = document.getElementById('provider-grid');
+    const dropdown = document.getElementById('provider-dropdown');
     grid.innerHTML = '';
 
-    Object.entries(PROVIDER_INFO).forEach(([id, info]) => {
-        const card = document.createElement('div');
-        card.className = 'provider-card';
-        card.dataset.provider = id;
-        card.onclick = () => selectProvider(id);
+    // Render featured providers as cards
+    Object.entries(PROVIDER_INFO)
+        .filter(([id, info]) => info.featured)
+        .forEach(([id, info]) => {
+            const card = document.createElement('div');
+            card.className = 'provider-card';
+            card.dataset.provider = id;
+            card.onclick = () => selectProvider(id);
 
-        card.innerHTML = `
-            <div class="provider-name">${info.name}</div>
-            <div class="provider-hint">${info.hint}</div>
-        `;
+            card.innerHTML = `
+                <div class="provider-name">${info.name}</div>
+                <div class="provider-hint">${info.hint}</div>
+            `;
 
-        grid.appendChild(card);
-    });
+            grid.appendChild(card);
+        });
+
+    // Render other providers in dropdown
+    if (dropdown) {
+        dropdown.innerHTML = '<option value="">More providers...</option>';
+        Object.entries(PROVIDER_INFO)
+            .filter(([id, info]) => !info.featured)
+            .forEach(([id, info]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${info.name} - ${info.hint}`;
+                dropdown.appendChild(option);
+            });
+    }
+}
+
+// Handle dropdown provider selection
+function selectDropdownProvider(selectElement) {
+    const providerId = selectElement.value;
+    if (providerId) {
+        selectProvider(providerId);
+        // Reset dropdown visual
+        selectElement.value = '';
+    }
 }
 
 // Update provider availability based on location
@@ -240,12 +279,22 @@ async function selectProvider(providerId) {
 
 // Map AI provider to cloud infrastructure
 const PROVIDER_TO_CLOUD = {
-    'openai': { cloud: 'aws', note: 'OpenAI runs on Microsoft Azure, but data suggests US regions' },
+    'openai': { cloud: 'azure', note: 'OpenAI runs on Microsoft Azure infrastructure' },
     'anthropic': { cloud: 'aws', note: 'Anthropic (Claude) runs primarily on AWS' },
+    'google': { cloud: 'gcp', note: 'Google Gemini runs on Google Cloud Platform' },
+    'mistral': { cloud: 'azure', note: 'Mistral AI partners with Microsoft Azure' },
+    'perplexity': { cloud: 'aws', note: 'Perplexity runs on AWS infrastructure' },
+    'stability': { cloud: 'aws', note: 'Stability AI uses AWS for model hosting' },
+    'replicate': { cloud: 'aws', note: 'Replicate hosts models on AWS' },
     'cohere': { cloud: 'aws', note: 'Cohere uses AWS and GCP' },
     'huggingface': { cloud: 'aws', note: 'Hugging Face Inference API uses AWS' },
     'azure-openai': { cloud: 'azure', note: 'Azure OpenAI runs on Microsoft Azure datacenters' },
-    'aws-bedrock': { cloud: 'aws', note: 'AWS Bedrock runs on Amazon Web Services' }
+    'aws-bedrock': { cloud: 'aws', note: 'AWS Bedrock runs on Amazon Web Services' },
+    'meta-llama': { cloud: 'aws', note: 'Meta Llama typically hosted on AWS/Azure' },
+    'midjourney': { cloud: 'gcp', note: 'Midjourney runs on Google Cloud Platform' },
+    'deepseek': { cloud: 'aws', note: 'DeepSeek uses cloud infrastructure in Asia' },
+    'xai': { cloud: 'aws', note: 'xAI Grok runs on Oracle Cloud / AWS' },
+    'together': { cloud: 'aws', note: 'Together AI hosts on AWS' }
 };
 
 // Show results

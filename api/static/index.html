@@ -42,6 +42,11 @@
                 <div class="provider-grid" id="provider-grid">
                     <!-- Populated by JS -->
                 </div>
+                <div class="provider-more">
+                    <select id="provider-dropdown" onchange="selectDropdownProvider(this)">
+                        <option value="">More providers...</option>
+                    </select>
+                </div>
             </section>
 
             <!-- Step 3: Results -->
@@ -80,6 +85,41 @@
                     <details>
                         <summary>Why this datacenter?</summary>
                         <div class="explanation-content" id="explanation-content"></div>
+                    </details>
+                </div>
+
+                <!-- Formula transparency -->
+                <div class="formula-explanation">
+                    <details>
+                        <summary>How we calculate emissions</summary>
+                        <div class="formula-content">
+                            <div class="formula-box">
+                                <code>CO₂ (g) = Energy (kWh) × PUE × Grid Intensity (g/kWh)</code>
+                            </div>
+                            <div class="formula-breakdown">
+                                <div class="formula-item">
+                                    <strong>Energy (kWh)</strong>
+                                    <span>= Power (W) ÷ 1000 × Time (hours)</span>
+                                </div>
+                                <div class="formula-item">
+                                    <strong>PUE</strong>
+                                    <span>= 1.2 (Power Usage Effectiveness - datacenter overhead)</span>
+                                </div>
+                                <div class="formula-item">
+                                    <strong>Grid Intensity</strong>
+                                    <span>= Regional carbon intensity from electricity generation</span>
+                                </div>
+                            </div>
+                            <div class="formula-sources">
+                                <strong>Sources:</strong>
+                                <ul>
+                                    <li><a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a> - AI power consumption</li>
+                                    <li><a href="https://www.iea.org/data-and-statistics" target="_blank">IEA</a> - Grid carbon intensity data</li>
+                                    <li><a href="https://www.epa.gov/greenvehicles" target="_blank">EPA</a> - Vehicle emissions comparisons</li>
+                                    <li><a href="https://mlco2.github.io/impact/" target="_blank">ML CO2 Impact</a> - ML emissions research</li>
+                                </ul>
+                            </div>
+                        </div>
                     </details>
                 </div>
 

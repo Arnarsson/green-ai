@@ -235,6 +235,16 @@ header h1 {
     color: var(--text-muted);
 }
 
+/* Provider dropdown for more options */
+.provider-more {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.provider-more select {
+    min-width: 200px;
+}
+
 /* Buttons */
 .btn-primary {
     padding: 0.875rem 1.75rem;
@@ -616,6 +626,94 @@ select option {
 
 .detection-explanation summary:hover {
     color: #60a5fa;
+}
+
+/* Formula explanation */
+.formula-explanation {
+    margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--glass-border);
+}
+
+.formula-explanation summary {
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--accent-green);
+    font-weight: 500;
+}
+
+.formula-explanation summary:hover {
+    color: #4ade80;
+}
+
+.formula-content {
+    margin-top: 1rem;
+}
+
+.formula-box {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.formula-box code {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.95rem;
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.formula-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.formula-item {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.formula-item strong {
+    color: var(--text-primary);
+    min-width: 120px;
+}
+
+.formula-sources {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.formula-sources strong {
+    color: var(--text-secondary);
+}
+
+.formula-sources ul {
+    margin-top: 0.5rem;
+    margin-left: 1.25rem;
+}
+
+.formula-sources li {
+    margin-bottom: 0.35rem;
+}
+
+.formula-sources a {
+    color: var(--accent-blue);
+    text-decoration: none;
+}
+
+.formula-sources a:hover {
+    text-decoration: underline;
 }
 
 .explanation-content {
