@@ -25,10 +25,10 @@
             <div class="config-col">
                 <!-- Location -->
                 <section class="panel" id="step-location">
-                    <h2>Location</h2>
+                    <h2>📍 Where are you?</h2>
                     <div class="location-options">
                         <button class="btn-secondary" id="btn-geolocation" onclick="detectLocation()">
-                            <span class="icon">📍</span> Detect
+                            Use my location
                         </button>
                         <span class="or-divider">or</span>
                         <select id="country-select" onchange="selectCountry(this.value)">
@@ -43,7 +43,7 @@
 
                 <!-- Provider -->
                 <section class="panel" id="step-provider">
-                    <h2>Provider</h2>
+                    <h2>🤖 Which AI?</h2>
                     <div class="provider-grid" id="provider-grid">
                         <!-- Populated by JS -->
                     </div>
@@ -56,7 +56,7 @@
 
                 <!-- Model -->
                 <section class="panel hidden" id="step-model">
-                    <h2>Model</h2>
+                    <h2>🎯 Pick a model</h2>
                     <div class="model-list" id="model-grid">
                         <!-- Populated by JS -->
                     </div>
@@ -64,18 +64,21 @@
 
                 <!-- Task/Usage -->
                 <section class="panel hidden" id="step-task">
-                    <h2>Usage Type</h2>
+                    <h2>⏱️ How will you use it?</h2>
                     <div class="task-grid">
                         <button class="task-btn" onclick="selectTask('quick', this)">
-                            <span class="task-label">Quick</span>
+                            <span class="task-icon">💬</span>
+                            <span class="task-label">Quick chat</span>
                             <span class="task-sub">~500ms</span>
                         </button>
                         <button class="task-btn" onclick="selectTask('standard', this)">
-                            <span class="task-label">Standard</span>
+                            <span class="task-icon">✍️</span>
+                            <span class="task-label">Writing</span>
                             <span class="task-sub">~3s</span>
                         </button>
                         <button class="task-btn" onclick="selectTask('complex', this)">
-                            <span class="task-label">Complex</span>
+                            <span class="task-icon">🧠</span>
+                            <span class="task-label">Deep thinking</span>
                             <span class="task-sub">~10s</span>
                         </button>
                     </div>
@@ -84,7 +87,7 @@
                 <!-- Methodology (quiet panel) -->
                 <section class="panel panel--quiet">
                     <details>
-                        <summary>Methodology</summary>
+                        <summary>📚 Methodology</summary>
                         <div class="quiet-content">
                             <div class="formula-box">
                                 <code>CO₂ = Energy × PUE × Grid Intensity</code>
@@ -148,7 +151,7 @@
 
                 <!-- Comparisons (quiet) -->
                 <section class="panel panel--quiet" id="comparison-section">
-                    <h3>Cleanest regions for this provider</h3>
+                    <h3>🌍 Cleanest regions for this provider</h3>
                     <div class="comparison-list" id="comparison-list">
                         <!-- Populated by JS -->
                     </div>
@@ -156,7 +159,7 @@
 
                 <!-- Usage scenarios (quiet) -->
                 <section class="panel panel--quiet" id="scenarios-section">
-                    <h3>At scale</h3>
+                    <h3>📊 At scale</h3>
                     <div class="scenario-grid" id="scenario-grid">
                         <!-- Populated by JS -->
                     </div>
@@ -165,7 +168,7 @@
                 <!-- Detection explanation (quiet) -->
                 <section class="panel panel--quiet" id="detection-section">
                     <details>
-                        <summary>Why this datacenter?</summary>
+                        <summary>🔍 Why this datacenter?</summary>
                         <div class="quiet-content" id="explanation-content">
                             <!-- Populated by JS -->
                         </div>
@@ -175,7 +178,7 @@
                 <!-- Formula explanation (quiet) -->
                 <section class="panel panel--quiet">
                     <details>
-                        <summary>How we calculate</summary>
+                        <summary>🧮 How we calculate</summary>
                         <div class="quiet-content">
                             <div class="formula-box">
                                 <code>CO₂ (g) = Energy (kWh) × PUE × Grid Intensity (g/kWh)</code>
@@ -192,7 +195,7 @@
                 <!-- Power tiers (quiet) -->
                 <section class="panel panel--quiet">
                     <details>
-                        <summary>Model power tiers</summary>
+                        <summary>⚡ Model power tiers</summary>
                         <div class="quiet-content">
                             <table class="power-table">
                                 <tr><td>Small</td><td>50-150W</td><td>Haiku, Gemini Flash</td></tr>

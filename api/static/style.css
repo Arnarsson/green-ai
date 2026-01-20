@@ -165,22 +165,19 @@ header h1 {
 }
 
 .panel h2 {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--dim);
+    letter-spacing: -0.01em;
+    color: var(--muted);
     margin-bottom: 14px;
 }
 
 .panel h3 {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
     margin-bottom: 12px;
 }
 
@@ -196,12 +193,10 @@ header h1 {
 }
 
 .panel--quiet summary {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--dim);
+    color: var(--muted);
     cursor: pointer;
     list-style: none;
 }
@@ -543,7 +538,10 @@ header h1 {
     border-color: var(--green-stroke);
 }
 
-.task-icon { display: none; }
+.task-icon {
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
 
 .task-label {
     font-weight: 600;
