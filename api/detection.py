@@ -10,14 +10,14 @@ Phase 1 (MVP): ~70% accuracy using:
 Phase 2: Will add ML and advanced techniques for 85%+ accuracy
 """
 
-import socket
-import httpx
 import asyncio
-from urllib.parse import urlparse
-from typing import Optional
-from functools import lru_cache
-from datetime import datetime, timedelta
 import logging
+import socket
+from datetime import datetime, timedelta
+from typing import Optional
+from urllib.parse import urlparse
+
+import httpx
 
 from .config import settings
 
@@ -55,7 +55,7 @@ async def detect_provider_and_region(
     api_endpoint: str,
     request_headers: Optional[dict] = None,
     response_headers: Optional[dict] = None,
-    latency_ms: int = 0
+    latency_ms: int = 0,
 ) -> dict:
     """
     Detect AI provider and datacenter location.
@@ -82,7 +82,7 @@ async def detect_provider_and_region(
             "country": "unknown",
             "confidence": "low",
             "method": "none",
-            "details": {"error": "Invalid API endpoint"}
+            "details": {"error": "Invalid API endpoint"},
         }
 
     # Detection methods (in priority order)
@@ -90,7 +90,7 @@ async def detect_provider_and_region(
         _detect_by_hostname(hostname),
         _detect_by_headers(response_headers) if response_headers else None,
         await _detect_by_ip(hostname),
-        _detect_by_latency(latency_ms) if latency_ms > 0 else None
+        _detect_by_latency(latency_ms) if latency_ms > 0 else None,
     ]
 
     # Combine results from all methods
@@ -114,43 +114,43 @@ def _detect_by_hostname(hostname: str) -> dict:
             "display_name": "OpenAI",
             "likely_regions": ["us-east-1", "us-west-2"],
             "country": "US",
-            "confidence": 0.95
+            "confidence": 0.95,
         },
         "anthropic.com": {
             "provider": "anthropic",
             "display_name": "Anthropic",
             "likely_regions": ["us-west-2"],
             "country": "US",
-            "confidence": 0.95
+            "confidence": 0.95,
         },
         "cohere.ai": {
             "provider": "cohere",
             "display_name": "Cohere",
             "likely_regions": ["us-east-1"],
             "country": "US",
-            "confidence": 0.95
+            "confidence": 0.95,
         },
         "huggingface.co": {
             "provider": "huggingface",
             "display_name": "Hugging Face",
             "likely_regions": ["us-east-1"],
             "country": "US",
-            "confidence": 0.90
+            "confidence": 0.90,
         },
         "openai.azure.com": {
             "provider": "azure-openai",
             "display_name": "Azure OpenAI",
             "likely_regions": ["dynamic"],  # User-specified
             "country": "varies",
-            "confidence": 0.85
+            "confidence": 0.85,
         },
         "bedrock": {
             "provider": "aws-bedrock",
             "display_name": "AWS Bedrock",
             "likely_regions": ["dynamic"],
             "country": "varies",
-            "confidence": 0.85
-        }
+            "confidence": 0.85,
+        },
     }
 
     # Check patterns
@@ -165,8 +165,8 @@ def _detect_by_hostname(hostname: str) -> dict:
                 "details": {
                     "hostname": hostname,
                     "pattern_matched": pattern,
-                    "all_likely_regions": data["likely_regions"]
-                }
+                    "all_likely_regions": data["likely_regions"],
+                },
             }
 
     # Unknown provider
@@ -176,7 +176,7 @@ def _detect_by_hostname(hostname: str) -> dict:
         "country": "unknown",
         "confidence": 0.0,
         "method": "hostname",
-        "details": {"hostname": hostname, "pattern_matched": None}
+        "details": {"hostname": hostname, "pattern_matched": None},
     }
 
 
@@ -201,9 +201,18 @@ def _detect_by_headers(headers: dict) -> Optional[dict]:
 
             # Map common CF datacenter codes to countries
             cf_dc_map = {
-                "CPH": "DK", "AMS": "NL", "FRA": "DE", "LHR": "GB",
-                "CDG": "FR", "MAD": "ES", "MIL": "IT", "STO": "SE",
-                "IAD": "US", "ORD": "US", "ATL": "US", "SJC": "US"
+                "CPH": "DK",
+                "AMS": "NL",
+                "FRA": "DE",
+                "LHR": "GB",
+                "CDG": "FR",
+                "MAD": "ES",
+                "MIL": "IT",
+                "STO": "SE",
+                "IAD": "US",
+                "ORD": "US",
+                "ATL": "US",
+                "SJC": "US",
             }
 
             country = cf_dc_map.get(dc_code, "unknown")
@@ -214,7 +223,7 @@ def _detect_by_headers(headers: dict) -> Optional[dict]:
                     "country": country,
                     "confidence": 0.70,  # CF is proxy, not actual compute
                     "method": "cf-ray-header",
-                    "details": details
+                    "details": details,
                 }
 
     # AWS headers
@@ -227,7 +236,7 @@ def _detect_by_headers(headers: dict) -> Optional[dict]:
             "country": "unknown",
             "confidence": 0.60,
             "method": "aws-headers",
-            "details": details
+            "details": details,
         }
 
     # Azure headers
@@ -239,7 +248,7 @@ def _detect_by_headers(headers: dict) -> Optional[dict]:
             "country": "unknown",
             "confidence": 0.60,
             "method": "azure-headers",
-            "details": details
+            "details": details,
         }
 
     return None
@@ -268,9 +277,11 @@ async def _detect_by_ip(hostname: str) -> Optional[dict]:
         for attempt in range(max_retries + 1):
             try:
                 async with httpx.AsyncClient() as client:
+                    url = f"http://ip-api.com/json/{ip}"
+                    params = "?fields=status,country,countryCode,city,lat,lon,isp"
                     response = await client.get(
-                        f"http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,lat,lon,isp",
-                        timeout=settings.ip_geolocation_timeout
+                        url + params,
+                        timeout=settings.ip_geolocation_timeout,
                     )
 
                     if response.status_code == 200:
@@ -287,8 +298,8 @@ async def _detect_by_ip(hostname: str) -> Optional[dict]:
                                     "ip": ip,
                                     "city": data.get("city"),
                                     "coordinates": [data.get("lat"), data.get("lon")],
-                                    "isp": data.get("isp")
-                                }
+                                    "isp": data.get("isp"),
+                                },
                             }
                             # Cache the result
                             _cache_ip_result(ip, result)
@@ -300,11 +311,15 @@ async def _detect_by_ip(hostname: str) -> Optional[dict]:
             except (httpx.TimeoutException, httpx.ConnectError) as e:
                 if attempt < max_retries:
                     logger.warning(
-                        f"IP geolocation attempt {attempt + 1} failed for {hostname}: {e}. Retrying..."
+                        f"IP geolocation attempt {attempt + 1} failed for {hostname}: {e}. "
+                        "Retrying..."
                     )
                     await asyncio.sleep(retry_delay * (attempt + 1))
                 else:
-                    logger.warning(f"IP geolocation failed for {hostname} after {max_retries + 1} attempts: {e}")
+                    logger.warning(
+                        f"IP geolocation failed for {hostname} "
+                        f"after {max_retries + 1} attempts: {e}"
+                    )
 
     except socket.gaierror as e:
         logger.warning(f"DNS resolution failed for {hostname}: {e}")
@@ -333,10 +348,7 @@ def _detect_by_latency(latency_ms: int) -> Optional[dict]:
             "country": "unknown",
             "confidence": 0.50,
             "method": "latency-pattern",
-            "details": {
-                "latency_ms": latency_ms,
-                "interpretation": "Same region (< 50ms)"
-            }
+            "details": {"latency_ms": latency_ms, "interpretation": "Same region (< 50ms)"},
         }
     elif latency_ms < 100:
         return {
@@ -345,10 +357,7 @@ def _detect_by_latency(latency_ms: int) -> Optional[dict]:
             "country": "unknown",
             "confidence": 0.40,
             "method": "latency-pattern",
-            "details": {
-                "latency_ms": latency_ms,
-                "interpretation": "Same continent (50-100ms)"
-            }
+            "details": {"latency_ms": latency_ms, "interpretation": "Same continent (50-100ms)"},
         }
     elif latency_ms < 200:
         return {
@@ -359,8 +368,8 @@ def _detect_by_latency(latency_ms: int) -> Optional[dict]:
             "method": "latency-pattern",
             "details": {
                 "latency_ms": latency_ms,
-                "interpretation": "Cross-continental (100-200ms)"
-            }
+                "interpretation": "Cross-continental (100-200ms)",
+            },
         }
 
     return None
@@ -385,15 +394,11 @@ def _combine_detections(detections: list[Optional[dict]]) -> dict:
             "country": "unknown",
             "confidence": "low",
             "method": "none",
-            "details": {"all_methods_failed": True}
+            "details": {"all_methods_failed": True},
         }
 
     # Sort by confidence (highest first)
-    sorted_detections = sorted(
-        valid_detections,
-        key=lambda x: x.get("confidence", 0),
-        reverse=True
-    )
+    sorted_detections = sorted(valid_detections, key=lambda x: x.get("confidence", 0), reverse=True)
 
     # Start with highest confidence result
     primary = sorted_detections[0]

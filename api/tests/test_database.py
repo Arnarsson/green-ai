@@ -2,12 +2,11 @@
 Unit tests for database lookup functions.
 """
 
-import pytest
 from api.database import (
     get_grid_intensity,
     PROVIDER_DATABASE,
     DATACENTER_DATABASE,
-    COUNTRY_GRID_INTENSITY
+    COUNTRY_GRID_INTENSITY,
 )
 
 
@@ -55,9 +54,7 @@ class TestGetGridIntensity:
     def test_global_average_fallback(self):
         """Test global average fallback when nothing matches."""
         result = get_grid_intensity(
-            provider="unknown-provider",
-            region="unknown-region",
-            country_code="XX"
+            provider="unknown-provider", region="unknown-region", country_code="XX"
         )
 
         assert result["source"] == "global_average"
@@ -120,7 +117,9 @@ class TestDatacenterDatabase:
         for cloud_provider, regions in DATACENTER_DATABASE.items():
             for region_code, region_data in regions.items():
                 intensity = region_data["intensity_g_kwh"]
-                assert 0 < intensity < 1000, f"{region_code} has unreasonable intensity: {intensity}"
+                assert (
+                    0 < intensity < 1000
+                ), f"{region_code} has unreasonable intensity: {intensity}"
 
     def test_known_cloud_providers_exist(self):
         """Test known cloud providers are in database."""

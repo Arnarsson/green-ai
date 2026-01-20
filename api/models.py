@@ -2,14 +2,15 @@
 Pydantic models for API requests and responses
 """
 
-from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 # Request Models
 class EstimateRequest(BaseModel):
     """Manual emissions estimate with known provider/region"""
+
     latency_ms: int = Field(..., description="Inference latency in milliseconds", gt=0)
     provider: str = Field(..., description="AI provider (e.g., 'openai', 'anthropic')")
     region: str = Field(..., description="Datacenter region (e.g., 'us-east-1')")
@@ -19,19 +20,22 @@ class EstimateRequest(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": [{
-                "latency_ms": 2500,
-                "provider": "openai",
-                "region": "us-east-1",
-                "power_watts": 400,
-                "pue": 1.2
-            }]
+            "examples": [
+                {
+                    "latency_ms": 2500,
+                    "provider": "openai",
+                    "region": "us-east-1",
+                    "power_watts": 400,
+                    "pue": 1.2,
+                }
+            ]
         }
     }
 
 
 class DetectAndEstimateRequest(BaseModel):
     """Auto-detect provider/region and estimate emissions"""
+
     api_endpoint: str = Field(..., description="AI API endpoint URL")
     latency_ms: int = Field(..., description="Request latency in milliseconds", gt=0)
     request_headers: Optional[dict] = Field(None, description="Request headers (optional)")
@@ -41,15 +45,14 @@ class DetectAndEstimateRequest(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "examples": [{
-                "api_endpoint": "https://api.openai.com/v1/chat/completions",
-                "latency_ms": 2500,
-                "response_headers": {
-                    "server": "cloudflare",
-                    "cf-ray": "8a1234567890abcd-CPH"
-                },
-                "power_watts": 400
-            }]
+            "examples": [
+                {
+                    "api_endpoint": "https://api.openai.com/v1/chat/completions",
+                    "latency_ms": 2500,
+                    "response_headers": {"server": "cloudflare", "cf-ray": "8a1234567890abcd-CPH"},
+                    "power_watts": 400,
+                }
+            ]
         }
     }
 
@@ -57,6 +60,7 @@ class DetectAndEstimateRequest(BaseModel):
 # Response Models
 class EstimateResponse(BaseModel):
     """Emissions estimate response"""
+
     emissions_g: float = Field(..., description="CO₂ emissions in grams")
     emissions_kg: float = Field(..., description="CO₂ emissions in kilograms")
     energy_kwh: float = Field(..., description="Energy consumed in kWh")
@@ -70,6 +74,7 @@ class EstimateResponse(BaseModel):
 
 class DetectAndEstimateResponse(BaseModel):
     """Auto-detected emissions estimate response"""
+
     emissions_g: float = Field(..., description="CO₂ emissions in grams")
     emissions_kg: float = Field(..., description="CO₂ emissions in kilograms")
     energy_kwh: float = Field(..., description="Energy consumed in kWh")
@@ -86,6 +91,7 @@ class DetectAndEstimateResponse(BaseModel):
 # Info Models
 class ProviderInfo(BaseModel):
     """Information about an AI provider"""
+
     name: str
     display_name: str
     known_endpoints: list[str]
@@ -95,6 +101,7 @@ class ProviderInfo(BaseModel):
 
 class RegionInfo(BaseModel):
     """Information about a datacenter region"""
+
     provider: str
     region_code: str
     country: str

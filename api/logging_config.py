@@ -65,7 +65,9 @@ class TextFormatter(logging.Formatter):
         request_id_str = f"[{request_id[:8]}] " if request_id else ""
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        return f"{timestamp} {record.levelname:8} {request_id_str}{record.name}: {record.getMessage()}"
+        return (
+            f"{timestamp} {record.levelname:8} {request_id_str}{record.name}: {record.getMessage()}"
+        )
 
 
 def setup_logging() -> logging.Logger:
@@ -144,9 +146,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     "path": path,
                     "query": query,
                     "client_ip": client_ip,
-                    "event": "request_started"
+                    "event": "request_started",
                 }
-            }
+            },
         )
 
         # Process request
@@ -164,10 +166,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                         "path": path,
                         "duration_ms": round(duration_ms, 2),
                         "event": "request_failed",
-                        "error": str(e)
+                        "error": str(e),
                     }
                 },
-                exc_info=True
+                exc_info=True,
             )
             raise
 
@@ -186,9 +188,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     "path": path,
                     "status_code": response.status_code,
                     "duration_ms": round(duration_ms, 2),
-                    "event": "request_completed"
+                    "event": "request_completed",
                 }
-            }
+            },
         )
 
         # Add request ID to response headers
@@ -226,6 +228,7 @@ def timed_operation(operation_name: str):
     Args:
         operation_name: Name of the operation being timed
     """
+
     def decorator(func):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -235,20 +238,22 @@ def timed_operation(operation_name: str):
                 result = await func(*args, **kwargs)
                 duration_ms = (time.perf_counter() - start) * 1000
                 log_with_context(
-                    logger, logging.DEBUG,
+                    logger,
+                    logging.DEBUG,
                     f"{operation_name} completed in {duration_ms:.2f}ms",
                     operation=operation_name,
-                    duration_ms=round(duration_ms, 2)
+                    duration_ms=round(duration_ms, 2),
                 )
                 return result
             except Exception as e:
                 duration_ms = (time.perf_counter() - start) * 1000
                 log_with_context(
-                    logger, logging.ERROR,
+                    logger,
+                    logging.ERROR,
                     f"{operation_name} failed after {duration_ms:.2f}ms: {e}",
                     operation=operation_name,
                     duration_ms=round(duration_ms, 2),
-                    error=str(e)
+                    error=str(e),
                 )
                 raise
 
@@ -260,20 +265,22 @@ def timed_operation(operation_name: str):
                 result = func(*args, **kwargs)
                 duration_ms = (time.perf_counter() - start) * 1000
                 log_with_context(
-                    logger, logging.DEBUG,
+                    logger,
+                    logging.DEBUG,
                     f"{operation_name} completed in {duration_ms:.2f}ms",
                     operation=operation_name,
-                    duration_ms=round(duration_ms, 2)
+                    duration_ms=round(duration_ms, 2),
                 )
                 return result
             except Exception as e:
                 duration_ms = (time.perf_counter() - start) * 1000
                 log_with_context(
-                    logger, logging.ERROR,
+                    logger,
+                    logging.ERROR,
                     f"{operation_name} failed after {duration_ms:.2f}ms: {e}",
                     operation=operation_name,
                     duration_ms=round(duration_ms, 2),
-                    error=str(e)
+                    error=str(e),
                 )
                 raise
 
@@ -287,4 +294,5 @@ def timed_operation(operation_name: str):
 def asyncio_iscoroutinefunction(func):
     """Check if function is async."""
     import asyncio
+
     return asyncio.iscoroutinefunction(func)

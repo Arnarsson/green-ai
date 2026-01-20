@@ -3,13 +3,14 @@ Unit tests for provider and datacenter detection logic.
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
+
 from api.detection import (
     detect_provider_and_region,
     _detect_by_hostname,
     _detect_by_headers,
     _detect_by_latency,
-    _combine_detections
+    _combine_detections,
 )
 
 
@@ -166,8 +167,22 @@ class TestCombineDetections:
     def test_highest_confidence_wins(self):
         """Test that highest confidence detection is primary."""
         detections = [
-            {"provider": "low-conf", "region": "r1", "country": "C1", "confidence": 0.3, "method": "m1", "details": {}},
-            {"provider": "high-conf", "region": "r2", "country": "C2", "confidence": 0.9, "method": "m2", "details": {}},
+            {
+                "provider": "low-conf",
+                "region": "r1",
+                "country": "C1",
+                "confidence": 0.3,
+                "method": "m1",
+                "details": {},
+            },
+            {
+                "provider": "high-conf",
+                "region": "r2",
+                "country": "C2",
+                "confidence": 0.9,
+                "method": "m2",
+                "details": {},
+            },
         ]
         result = _combine_detections(detections)
 
@@ -177,8 +192,22 @@ class TestCombineDetections:
     def test_fills_missing_data(self):
         """Test that missing data is filled from lower confidence sources."""
         detections = [
-            {"provider": "known", "region": "unknown", "country": "unknown", "confidence": 0.9, "method": "m1", "details": {}},
-            {"provider": "other", "region": "us-east-1", "country": "US", "confidence": 0.5, "method": "m2", "details": {}},
+            {
+                "provider": "known",
+                "region": "unknown",
+                "country": "unknown",
+                "confidence": 0.9,
+                "method": "m1",
+                "details": {},
+            },
+            {
+                "provider": "other",
+                "region": "us-east-1",
+                "country": "US",
+                "confidence": 0.5,
+                "method": "m2",
+                "details": {},
+            },
         ]
         result = _combine_detections(detections)
 
@@ -201,9 +230,36 @@ class TestCombineDetections:
 
     def test_confidence_labels(self):
         """Test confidence score to label mapping."""
-        high_conf = [{"provider": "p", "region": "r", "country": "c", "confidence": 0.85, "method": "m", "details": {}}]
-        med_conf = [{"provider": "p", "region": "r", "country": "c", "confidence": 0.65, "method": "m", "details": {}}]
-        low_conf = [{"provider": "p", "region": "r", "country": "c", "confidence": 0.45, "method": "m", "details": {}}]
+        high_conf = [
+            {
+                "provider": "p",
+                "region": "r",
+                "country": "c",
+                "confidence": 0.85,
+                "method": "m",
+                "details": {},
+            }
+        ]
+        med_conf = [
+            {
+                "provider": "p",
+                "region": "r",
+                "country": "c",
+                "confidence": 0.65,
+                "method": "m",
+                "details": {},
+            }
+        ]
+        low_conf = [
+            {
+                "provider": "p",
+                "region": "r",
+                "country": "c",
+                "confidence": 0.45,
+                "method": "m",
+                "details": {},
+            }
+        ]
 
         assert _combine_detections(high_conf)["confidence"] == "high"
         assert _combine_detections(med_conf)["confidence"] == "medium"
@@ -216,10 +272,7 @@ class TestDetectProviderAndRegion:
     @pytest.mark.asyncio
     async def test_invalid_endpoint(self):
         """Test invalid endpoint URL."""
-        result = await detect_provider_and_region(
-            api_endpoint="not-a-url",
-            latency_ms=100
-        )
+        result = await detect_provider_and_region(api_endpoint="not-a-url", latency_ms=100)
 
         assert result["provider"] == "unknown"
         assert result["confidence"] == "low"
@@ -231,8 +284,7 @@ class TestDetectProviderAndRegion:
             mock_ip.return_value = None
 
             result = await detect_provider_and_region(
-                api_endpoint="https://api.openai.com/v1/chat/completions",
-                latency_ms=100
+                api_endpoint="https://api.openai.com/v1/chat/completions", latency_ms=100
             )
 
             assert result["provider"] == "openai"
@@ -247,7 +299,7 @@ class TestDetectProviderAndRegion:
             result = await detect_provider_and_region(
                 api_endpoint="https://api.openai.com/v1/chat/completions",
                 response_headers={"cf-ray": "abc123-CPH"},
-                latency_ms=100
+                latency_ms=100,
             )
 
             assert result["provider"] == "openai"

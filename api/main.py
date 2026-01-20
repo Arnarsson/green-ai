@@ -31,15 +31,11 @@ from .models import (
     DetectAndEstimateRequest,
     DetectAndEstimateResponse,
     ProviderInfo,
-    RegionInfo
+    RegionInfo,
 )
 from .detection import detect_provider_and_region
 from .emissions import calculate_emissions
-from .database import (
-    PROVIDER_DATABASE,
-    DATACENTER_DATABASE,
-    get_grid_intensity
-)
+from .database import PROVIDER_DATABASE, DATACENTER_DATABASE, get_grid_intensity
 
 # Setup logging
 logger = setup_logging()
@@ -66,7 +62,7 @@ app = FastAPI(
     version=settings.app_version,
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add rate limiter
@@ -107,10 +103,7 @@ async def green_ai_exception_handler(request: Request, exc: GreenAIException):
     """Handle custom exceptions with structured response."""
     response_data = exc.to_dict()
     response_data["request_id"] = get_request_id()
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=response_data
-    )
+    return JSONResponse(status_code=exc.status_code, content=response_data)
 
 
 # General exception handler
@@ -123,8 +116,8 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={
             "error": "INTERNAL_ERROR",
             "message": "An unexpected error occurred" if settings.is_production else str(exc),
-            "request_id": get_request_id()
-        }
+            "request_id": get_request_id(),
+        },
     )
 
 
@@ -142,8 +135,8 @@ async def root():
             "providers": "GET /v1/providers",
             "regions": "GET /v1/regions",
             "health": "GET /health",
-            "metrics": "GET /metrics"
-        }
+            "metrics": "GET /metrics",
+        },
     }
 
 
@@ -158,7 +151,7 @@ async def health_check():
     return {
         "status": "healthy",
         "version": settings.app_version,
-        "environment": settings.environment
+        "environment": settings.environment,
     }
 
 
@@ -179,13 +172,12 @@ async def detailed_health_check():
         "checks": {
             "api": {"status": "healthy"},
             "config": {"status": "healthy", "rate_limit": settings.rate_limit_string},
-        }
+        },
     }
 
     # Check if any critical check failed
     all_healthy = all(
-        check.get("status") == "healthy"
-        for check in health_status["checks"].values()
+        check.get("status") == "healthy" for check in health_status["checks"].values()
     )
     health_status["status"] = "healthy" if all_healthy else "degraded"
 
@@ -204,15 +196,12 @@ async def metrics():
 
     # Basic metrics (can be expanded with prometheus_client)
     metrics_data = {
-        "app_info": {
-            "version": settings.app_version,
-            "environment": settings.environment
-        },
+        "app_info": {"version": settings.app_version, "environment": settings.environment},
         "config": {
             "rate_limit": settings.rate_limit_string,
             "default_power_watts": settings.default_power_watts,
-            "default_pue": settings.default_pue
-        }
+            "default_pue": settings.default_pue,
+        },
     }
     return metrics_data
 
@@ -230,9 +219,7 @@ async def estimate_emissions_endpoint(request: Request, data: EstimateRequest):
 
     # Get grid intensity
     grid_intensity = get_grid_intensity(
-        provider=data.provider,
-        region=data.region,
-        country_code=data.country_code
+        provider=data.provider, region=data.region, country_code=data.country_code
     )
 
     # Calculate emissions
@@ -240,7 +227,7 @@ async def estimate_emissions_endpoint(request: Request, data: EstimateRequest):
         latency_ms=data.latency_ms,
         power_watts=data.power_watts or settings.default_power_watts,
         grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
-        pue=data.pue or settings.default_pue
+        pue=data.pue or settings.default_pue,
     )
 
     request_logger.info(
@@ -257,7 +244,7 @@ async def estimate_emissions_endpoint(request: Request, data: EstimateRequest):
         region=data.region,
         confidence="high",
         detection_method="manual",
-        timestamp=result["timestamp"]
+        timestamp=result["timestamp"],
     )
 
 
@@ -277,7 +264,7 @@ async def detect_and_estimate_endpoint(request: Request, data: DetectAndEstimate
         api_endpoint=data.api_endpoint,
         request_headers=data.request_headers,
         response_headers=data.response_headers,
-        latency_ms=data.latency_ms
+        latency_ms=data.latency_ms,
     )
 
     request_logger.info(
@@ -289,7 +276,7 @@ async def detect_and_estimate_endpoint(request: Request, data: DetectAndEstimate
     grid_intensity = get_grid_intensity(
         provider=detection["provider"],
         region=detection["region"],
-        country_code=detection["country"]
+        country_code=detection["country"],
     )
 
     # Calculate emissions
@@ -297,7 +284,7 @@ async def detect_and_estimate_endpoint(request: Request, data: DetectAndEstimate
         latency_ms=data.latency_ms,
         power_watts=data.power_watts or settings.default_power_watts,
         grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
-        pue=data.pue or settings.default_pue
+        pue=data.pue or settings.default_pue,
     )
 
     return DetectAndEstimateResponse(
@@ -311,7 +298,7 @@ async def detect_and_estimate_endpoint(request: Request, data: DetectAndEstimate
         confidence=detection["confidence"],
         detection_method=detection["method"],
         detection_details=detection["details"],
-        timestamp=result["timestamp"]
+        timestamp=result["timestamp"],
     )
 
 
@@ -321,13 +308,15 @@ async def list_providers():
     providers = []
 
     for provider_name, provider_data in PROVIDER_DATABASE.items():
-        providers.append(ProviderInfo(
-            name=provider_name,
-            display_name=provider_data["display_name"],
-            known_endpoints=provider_data["endpoints"],
-            likely_regions=provider_data["likely_regions"],
-            detection_accuracy=provider_data["detection_accuracy"]
-        ))
+        providers.append(
+            ProviderInfo(
+                name=provider_name,
+                display_name=provider_data["display_name"],
+                known_endpoints=provider_data["endpoints"],
+                likely_regions=provider_data["likely_regions"],
+                detection_accuracy=provider_data["detection_accuracy"],
+            )
+        )
 
     return providers
 
@@ -339,15 +328,17 @@ async def list_regions():
 
     for provider, datacenters in DATACENTER_DATABASE.items():
         for region_code, region_data in datacenters.items():
-            regions.append(RegionInfo(
-                provider=provider,
-                region_code=region_code,
-                country=region_data["country"],
-                city=region_data.get("city"),
-                intensity_g_kwh=region_data["intensity_g_kwh"],
-                coordinates=region_data.get("coords"),
-                renewable_percentage=region_data.get("renewable_pct")
-            ))
+            regions.append(
+                RegionInfo(
+                    provider=provider,
+                    region_code=region_code,
+                    country=region_data["country"],
+                    city=region_data.get("city"),
+                    intensity_g_kwh=region_data["intensity_g_kwh"],
+                    coordinates=region_data.get("coords"),
+                    renewable_percentage=region_data.get("renewable_pct"),
+                )
+            )
 
     return regions
 
@@ -361,16 +352,14 @@ async def not_found_handler(request: Request, exc):
             "error": "NOT_FOUND",
             "message": f"The endpoint {request.url.path} does not exist",
             "docs": "/docs",
-            "request_id": get_request_id()
-        }
+            "request_id": get_request_id(),
+        },
     )
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=not settings.is_production
+        "main:app", host=settings.host, port=settings.port, reload=not settings.is_production
     )

@@ -62,13 +62,16 @@ class TestEstimateEndpoint:
 
     def test_estimate_valid_request(self, client):
         """Test estimate with valid request."""
-        response = client.post("/v1/estimate", json={
-            "latency_ms": 2500,
-            "provider": "openai",
-            "region": "us-east-1",
-            "power_watts": 400,
-            "pue": 1.2
-        })
+        response = client.post(
+            "/v1/estimate",
+            json={
+                "latency_ms": 2500,
+                "provider": "openai",
+                "region": "us-east-1",
+                "power_watts": 400,
+                "pue": 1.2,
+            },
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -80,13 +83,16 @@ class TestEstimateEndpoint:
 
     def test_estimate_with_country_code(self, client):
         """Test estimate with country code fallback."""
-        response = client.post("/v1/estimate", json={
-            "latency_ms": 2500,
-            "provider": "unknown-provider",
-            "region": "unknown-region",
-            "country_code": "DK",
-            "power_watts": 400
-        })
+        response = client.post(
+            "/v1/estimate",
+            json={
+                "latency_ms": 2500,
+                "provider": "unknown-provider",
+                "region": "unknown-region",
+                "country_code": "DK",
+                "power_watts": 400,
+            },
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -95,41 +101,37 @@ class TestEstimateEndpoint:
 
     def test_estimate_missing_latency(self, client):
         """Test estimate fails without latency."""
-        response = client.post("/v1/estimate", json={
-            "provider": "openai",
-            "region": "us-east-1"
-        })
+        response = client.post("/v1/estimate", json={"provider": "openai", "region": "us-east-1"})
 
         assert response.status_code == 422  # Validation error
 
     def test_estimate_invalid_latency(self, client):
         """Test estimate fails with negative latency."""
-        response = client.post("/v1/estimate", json={
-            "latency_ms": -100,
-            "provider": "openai",
-            "region": "us-east-1"
-        })
+        response = client.post(
+            "/v1/estimate", json={"latency_ms": -100, "provider": "openai", "region": "us-east-1"}
+        )
 
         assert response.status_code == 422
 
     def test_estimate_invalid_pue(self, client):
         """Test estimate fails with invalid PUE."""
-        response = client.post("/v1/estimate", json={
-            "latency_ms": 2500,
-            "provider": "openai",
-            "region": "us-east-1",
-            "pue": 0.5  # PUE must be >= 1.0
-        })
+        response = client.post(
+            "/v1/estimate",
+            json={
+                "latency_ms": 2500,
+                "provider": "openai",
+                "region": "us-east-1",
+                "pue": 0.5,  # PUE must be >= 1.0
+            },
+        )
 
         assert response.status_code == 422
 
     def test_estimate_default_values(self, client):
         """Test estimate uses default values."""
-        response = client.post("/v1/estimate", json={
-            "latency_ms": 2500,
-            "provider": "openai",
-            "region": "us-east-1"
-        })
+        response = client.post(
+            "/v1/estimate", json={"latency_ms": 2500, "provider": "openai", "region": "us-east-1"}
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -145,10 +147,13 @@ class TestDetectAndEstimateEndpoint:
         with patch("api.detection._detect_by_ip", new_callable=AsyncMock) as mock_ip:
             mock_ip.return_value = None
 
-            response = client.post("/v1/detect-and-estimate", json={
-                "api_endpoint": "https://api.openai.com/v1/chat/completions",
-                "latency_ms": 2500
-            })
+            response = client.post(
+                "/v1/detect-and-estimate",
+                json={
+                    "api_endpoint": "https://api.openai.com/v1/chat/completions",
+                    "latency_ms": 2500,
+                },
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -160,10 +165,10 @@ class TestDetectAndEstimateEndpoint:
         with patch("api.detection._detect_by_ip", new_callable=AsyncMock) as mock_ip:
             mock_ip.return_value = None
 
-            response = client.post("/v1/detect-and-estimate", json={
-                "api_endpoint": "https://api.anthropic.com/v1/messages",
-                "latency_ms": 1800
-            })
+            response = client.post(
+                "/v1/detect-and-estimate",
+                json={"api_endpoint": "https://api.anthropic.com/v1/messages", "latency_ms": 1800},
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -174,13 +179,14 @@ class TestDetectAndEstimateEndpoint:
         with patch("api.detection._detect_by_ip", new_callable=AsyncMock) as mock_ip:
             mock_ip.return_value = None
 
-            response = client.post("/v1/detect-and-estimate", json={
-                "api_endpoint": "https://api.openai.com/v1/chat/completions",
-                "latency_ms": 2500,
-                "response_headers": {
-                    "cf-ray": "abc123-SJC"
-                }
-            })
+            response = client.post(
+                "/v1/detect-and-estimate",
+                json={
+                    "api_endpoint": "https://api.openai.com/v1/chat/completions",
+                    "latency_ms": 2500,
+                    "response_headers": {"cf-ray": "abc123-SJC"},
+                },
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -195,13 +201,16 @@ class TestDetectAndEstimateEndpoint:
                 "country": "US",
                 "confidence": 0.65,
                 "method": "ip-geolocation",
-                "details": {"ip": "1.2.3.4"}
+                "details": {"ip": "1.2.3.4"},
             }
 
-            response = client.post("/v1/detect-and-estimate", json={
-                "api_endpoint": "https://api.unknownprovider.com/v1/complete",
-                "latency_ms": 2500
-            })
+            response = client.post(
+                "/v1/detect-and-estimate",
+                json={
+                    "api_endpoint": "https://api.unknownprovider.com/v1/complete",
+                    "latency_ms": 2500,
+                },
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -210,9 +219,7 @@ class TestDetectAndEstimateEndpoint:
 
     def test_detect_missing_endpoint(self, client):
         """Test detection fails without endpoint."""
-        response = client.post("/v1/detect-and-estimate", json={
-            "latency_ms": 2500
-        })
+        response = client.post("/v1/detect-and-estimate", json={"latency_ms": 2500})
 
         assert response.status_code == 422
 

@@ -2,7 +2,6 @@
 Unit tests for emissions calculation logic.
 """
 
-import pytest
 from api.emissions import calculate_emissions, emissions_to_comparison
 
 
@@ -12,10 +11,7 @@ class TestCalculateEmissions:
     def test_basic_calculation(self):
         """Test basic emissions calculation with standard inputs."""
         result = calculate_emissions(
-            latency_ms=1000,  # 1 second
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.2
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=1.2  # 1 second
         )
 
         assert "emissions_g" in result
@@ -29,16 +25,10 @@ class TestCalculateEmissions:
     def test_emissions_scale_with_latency(self):
         """Verify emissions scale linearly with latency."""
         result_1s = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.0
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=1.0
         )
         result_2s = calculate_emissions(
-            latency_ms=2000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.0
+            latency_ms=2000, power_watts=400, grid_intensity_g_kwh=400, pue=1.0
         )
 
         # 2x latency should give 2x emissions (with small tolerance for rounding)
@@ -47,16 +37,10 @@ class TestCalculateEmissions:
     def test_emissions_scale_with_power(self):
         """Verify emissions scale linearly with power consumption."""
         result_400w = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.0
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=1.0
         )
         result_800w = calculate_emissions(
-            latency_ms=1000,
-            power_watts=800,
-            grid_intensity_g_kwh=400,
-            pue=1.0
+            latency_ms=1000, power_watts=800, grid_intensity_g_kwh=400, pue=1.0
         )
 
         # 2x power should give 2x emissions (with small tolerance for rounding)
@@ -65,16 +49,10 @@ class TestCalculateEmissions:
     def test_pue_multiplier(self):
         """Verify PUE correctly multiplies energy consumption."""
         result_pue1 = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.0
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=1.0
         )
         result_pue2 = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=2.0
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=2.0
         )
 
         # PUE 2.0 should give 2x emissions compared to PUE 1.0 (with small tolerance for rounding)
@@ -83,16 +61,10 @@ class TestCalculateEmissions:
     def test_grid_intensity_impact(self):
         """Verify grid intensity correctly affects emissions."""
         result_clean = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=100,  # Clean grid
-            pue=1.0
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=100, pue=1.0  # Clean grid
         )
         result_dirty = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,  # Dirty grid
-            pue=1.0
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=1.0  # Dirty grid
         )
 
         # 4x grid intensity should give 4x emissions
@@ -101,10 +73,7 @@ class TestCalculateEmissions:
     def test_zero_latency(self):
         """Test with zero latency (edge case)."""
         result = calculate_emissions(
-            latency_ms=0,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.2
+            latency_ms=0, power_watts=400, grid_intensity_g_kwh=400, pue=1.2
         )
 
         assert result["emissions_g"] == 0
@@ -113,10 +82,7 @@ class TestCalculateEmissions:
     def test_very_long_latency(self):
         """Test with very long latency (1 hour)."""
         result = calculate_emissions(
-            latency_ms=3600000,  # 1 hour
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.0
+            latency_ms=3600000, power_watts=400, grid_intensity_g_kwh=400, pue=1.0  # 1 hour
         )
 
         # 400W for 1 hour = 0.4 kWh
@@ -126,10 +92,7 @@ class TestCalculateEmissions:
     def test_timestamp_format(self):
         """Verify timestamp is in ISO 8601 format."""
         result = calculate_emissions(
-            latency_ms=1000,
-            power_watts=400,
-            grid_intensity_g_kwh=400,
-            pue=1.2
+            latency_ms=1000, power_watts=400, grid_intensity_g_kwh=400, pue=1.2
         )
 
         # Should be parseable as ISO format and contain timezone
@@ -139,10 +102,7 @@ class TestCalculateEmissions:
     def test_rounding(self):
         """Verify results are properly rounded."""
         result = calculate_emissions(
-            latency_ms=1234,
-            power_watts=456,
-            grid_intensity_g_kwh=378,
-            pue=1.15
+            latency_ms=1234, power_watts=456, grid_intensity_g_kwh=378, pue=1.15
         )
 
         # emissions_g should be rounded to 4 decimal places

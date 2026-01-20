@@ -25,7 +25,7 @@ def mock_ip_geolocation():
         "city": "San Francisco",
         "lat": 37.7749,
         "lon": -122.4194,
-        "isp": "Cloudflare"
+        "isp": "Cloudflare",
     }
 
     with patch("api.detection.httpx.AsyncClient") as mock_client:
@@ -46,7 +46,7 @@ def sample_estimate_request():
         "provider": "openai",
         "region": "us-east-1",
         "power_watts": 400,
-        "pue": 1.2
+        "pue": 1.2,
     }
 
 
@@ -56,12 +56,9 @@ def sample_detect_request():
     return {
         "api_endpoint": "https://api.openai.com/v1/chat/completions",
         "latency_ms": 2500,
-        "response_headers": {
-            "server": "cloudflare",
-            "cf-ray": "8a1234567890abcd-SJC"
-        },
+        "response_headers": {"server": "cloudflare", "cf-ray": "8a1234567890abcd-SJC"},
         "power_watts": 400,
-        "pue": 1.2
+        "pue": 1.2,
     }
 
 
@@ -71,5 +68,5 @@ def sample_anthropic_request():
     return {
         "api_endpoint": "https://api.anthropic.com/v1/messages",
         "latency_ms": 1800,
-        "power_watts": 400
+        "power_watts": 400,
     }

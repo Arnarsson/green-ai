@@ -15,7 +15,7 @@ class GreenAIException(Exception):
         message: str,
         error_code: str = "INTERNAL_ERROR",
         status_code: int = 500,
-        details: Optional[dict] = None
+        details: Optional[dict] = None,
     ):
         self.message = message
         self.error_code = error_code
@@ -25,11 +25,7 @@ class GreenAIException(Exception):
 
     def to_dict(self) -> dict:
         """Convert exception to dictionary for API response."""
-        return {
-            "error": self.error_code,
-            "message": self.message,
-            "details": self.details
-        }
+        return {"error": self.error_code, "message": self.message, "details": self.details}
 
 
 class ValidationError(GreenAIException):
@@ -40,19 +36,21 @@ class ValidationError(GreenAIException):
             message=message,
             error_code="VALIDATION_ERROR",
             status_code=422,
-            details={"field": field, **(details or {})}
+            details={"field": field, **(details or {})},
         )
 
 
 class ProviderDetectionError(GreenAIException):
     """Raised when provider detection fails."""
 
-    def __init__(self, message: str, endpoint: Optional[str] = None, details: Optional[dict] = None):
+    def __init__(
+        self, message: str, endpoint: Optional[str] = None, details: Optional[dict] = None
+    ):
         super().__init__(
             message=message,
             error_code="DETECTION_ERROR",
             status_code=400,
-            details={"endpoint": endpoint, **(details or {})}
+            details={"endpoint": endpoint, **(details or {})},
         )
 
 
@@ -64,7 +62,7 @@ class ExternalServiceError(GreenAIException):
         message: str,
         service: str,
         original_error: Optional[Exception] = None,
-        details: Optional[dict] = None
+        details: Optional[dict] = None,
     ):
         super().__init__(
             message=message,
@@ -73,8 +71,8 @@ class ExternalServiceError(GreenAIException):
             details={
                 "service": service,
                 "original_error": str(original_error) if original_error else None,
-                **(details or {})
-            }
+                **(details or {}),
+            },
         )
 
 
@@ -86,7 +84,7 @@ class RateLimitExceededError(GreenAIException):
             message=message,
             error_code="RATE_LIMIT_EXCEEDED",
             status_code=429,
-            details={"retry_after_seconds": retry_after}
+            details={"retry_after_seconds": retry_after},
         )
 
 
@@ -98,17 +96,19 @@ class ConfigurationError(GreenAIException):
             message=message,
             error_code="CONFIGURATION_ERROR",
             status_code=500,
-            details={"config_key": config_key}
+            details={"config_key": config_key},
         )
 
 
 class DataNotFoundError(GreenAIException):
     """Raised when requested data is not found."""
 
-    def __init__(self, message: str, resource: Optional[str] = None, identifier: Optional[Any] = None):
+    def __init__(
+        self, message: str, resource: Optional[str] = None, identifier: Optional[Any] = None
+    ):
         super().__init__(
             message=message,
             error_code="NOT_FOUND",
             status_code=404,
-            details={"resource": resource, "identifier": identifier}
+            details={"resource": resource, "identifier": identifier},
         )
