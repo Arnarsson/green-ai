@@ -44,7 +44,7 @@ jobs:
 
       - name: Check formatting with black
         run: |
-          black --check --diff api
+          black --check --diff --line-length 100 api
 
       - name: Type check with mypy
         run: |
