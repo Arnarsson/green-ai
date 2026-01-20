@@ -105,14 +105,22 @@ if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
-# Dashboard route
-@app.get("/dashboard", include_in_schema=False)
+# Dashboard route (main page)
+@app.get("/", include_in_schema=False)
 async def dashboard():
-    """Serve the dashboard HTML"""
+    """Serve the dashboard HTML as the main page"""
     index_path = Path(__file__).parent / "static" / "index.html"
     if index_path.exists():
         return FileResponse(index_path)
     raise HTTPException(status_code=404, detail="Dashboard not found")
+
+
+# Legacy redirect from /dashboard
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard_redirect():
+    """Redirect old dashboard URL to root"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=301)
 
 
 # Custom exception handler for GreenAIException
@@ -139,15 +147,14 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 
-@app.get("/")
-async def root():
-    """API root - welcome message"""
+@app.get("/api")
+async def api_info():
+    """API info - welcome message and endpoint list"""
     return {
         "message": f"Welcome to {settings.app_name}",
         "version": settings.app_version,
         "environment": settings.environment,
         "docs": "/docs",
-        "dashboard": "/dashboard",
         "endpoints": {
             "estimate": "POST /v1/estimate",
             "detect_and_estimate": "POST /v1/detect-and-estimate",
