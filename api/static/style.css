@@ -667,43 +667,41 @@ select:focus {
 
 .scenario-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
 }
 
 .scenario-card {
     background: var(--surface);
     border: 1px solid var(--stroke);
     border-radius: var(--r-sm);
-    padding: 12px;
+    padding: 10px 8px;
     text-align: center;
 }
 
-.scenario-icon { display: none; }
-
 .scenario-title {
-    font-weight: 600;
-    font-size: 0.75rem;
-    margin-bottom: 2px;
-}
-
-.scenario-desc {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
+    font-weight: 500;
     color: var(--dim);
-    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
 }
 
 .scenario-emissions {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--green);
 }
 
 .scenario-unit {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
+    font-size: 0.6rem;
+    font-weight: 400;
     color: var(--dim);
+    margin-left: 2px;
 }
 
 /* ============================================
@@ -813,7 +811,7 @@ select:focus {
     }
 
     .scenario-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .stats-bar {

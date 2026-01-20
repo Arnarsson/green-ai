@@ -629,8 +629,7 @@ const PROVIDER_TO_CLOUD = {
 
 // Show results
 async function showResults() {
-    const provider = providers.find(p => p.name === selectedProvider);
-    if (!provider) return;
+    if (!selectedProvider || !selectedCountry) return;
 
     // Get cloud mapping
     const cloudMapping = PROVIDER_TO_CLOUD[selectedProvider] || { cloud: 'aws', note: 'Default assumption' };
@@ -842,47 +841,33 @@ function calculateScenarioEmissions(scenario, gridIntensity, pue = 1.2) {
 // Show usage scenarios with calculated emissions
 function showScenarios(result) {
     const grid = document.getElementById('scenario-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     const intensity = result.region.intensity_g_kwh;
-    // Use model-specific power if available
     const modelPower = selectedModel ? selectedModel.power : null;
 
-    USAGE_SCENARIOS.forEach(scenario => {
-        // Override scenario power with model power if selected
-        const adjustedScenario = modelPower ? { ...scenario, power: modelPower } : scenario;
-        const emissions = calculateScenarioEmissions(adjustedScenario, intensity);
+    // Simplified scenarios for console layout
+    const simpleScenarios = [
+        { label: '1hr chat', requests: 50, latency: 2000 },
+        { label: '1hr coding', requests: 20, latency: 8000 },
+        { label: '10 images', requests: 10, latency: 15000 },
+        { label: '1hr docs', requests: 30, latency: 3000 }
+    ];
+
+    simpleScenarios.forEach(scenario => {
+        const power = modelPower || 400;
+        const energyPerReq = (power / 1000) * (scenario.latency / 1000 / 3600);
+        const emissions = energyPerReq * scenario.requests * 1.2 * intensity;
+
         const card = document.createElement('div');
         card.className = 'scenario-card';
         card.innerHTML = `
-            <div class="scenario-icon">${scenario.icon}</div>
-            <div class="scenario-title">${scenario.title}</div>
-            <div class="scenario-desc">${scenario.desc}</div>
-            <div class="scenario-emissions">${emissions.toFixed(2)}</div>
-            <div class="scenario-unit">grams CO₂</div>
+            <div class="scenario-title">${scenario.label}</div>
+            <div class="scenario-emissions">${emissions.toFixed(2)}<span class="scenario-unit">g</span></div>
         `;
         grid.appendChild(card);
     });
-
-    // Add sources note with model info if selected
-    const sources = document.createElement('div');
-    sources.className = 'sources';
-    if (selectedModel) {
-        sources.innerHTML = `
-            Using <strong>${selectedModel.name}</strong> at <strong>${selectedModel.power}W</strong>.
-            Power estimates from
-            <a href="https://arxiv.org/abs/2311.16863" target="_blank">Luccioni et al. 2023</a> and
-            <a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a>.
-        `;
-    } else {
-        sources.innerHTML = `
-            Sources: Power estimates based on
-            <a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a> and
-            <a href="https://mlco2.github.io/impact/" target="_blank">ML CO2 Impact</a>.
-            Actual emissions vary by model size and hardware.
-        `;
-    }
-    grid.parentElement.appendChild(sources);
 }
 
 // Show real-world equivalents
