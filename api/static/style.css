@@ -94,6 +94,22 @@ header h1 {
     letter-spacing: -0.02em;
 }
 
+.powered-by {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.powered-by a {
+    color: var(--accent-green);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.powered-by a:hover {
+    color: #4ade80;
+}
+
 .subtitle {
     color: var(--text-secondary);
     font-size: 1.15rem;
