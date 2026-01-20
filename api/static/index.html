@@ -3,255 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green AI - CO2 Emissions Tracker</title>
+    <title>Green AI - Carbon Map for AI Infrastructure</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>Green AI</h1>
-                <p class="tagline">Carbon footprint calculator for AI inference</p>
+    <div class="app">
+        <!-- Header bar -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🌍 Green AI</h1>
+                <span class="tagline">See where your AI runs — and what it costs the planet</span>
             </div>
-            <p class="powered-by">by <a href="mailto:sva@atlasintelligence.dk">Atlas Intelligence</a></p>
+            <div class="header-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                <a href="/docs" class="header-link">API</a>
+            </div>
         </header>
 
-        <main class="console">
-            <!-- LEFT: Configuration -->
-            <div class="config-col">
-                <!-- Location -->
-                <section class="panel" id="step-location">
-                    <h2>📍 Where are you?</h2>
-                    <div class="location-options">
-                        <button class="btn-secondary" id="btn-geolocation" onclick="detectLocation()">
-                            Use my location
-                        </button>
-                        <span class="or-divider">or</span>
-                        <select id="country-select" onchange="selectCountry(this.value)">
-                            <option value="">Select country...</option>
-                        </select>
-                    </div>
-                    <div id="location-result" class="location-result hidden">
-                        <span class="location-badge" id="selected-location">-</span>
-                        <button class="btn-text" onclick="resetLocation()">Change</button>
-                    </div>
-                </section>
+        <!-- Provider filter bar -->
+        <nav class="filter-bar">
+            <span class="filter-label">Show datacenters for:</span>
+            <div class="filter-chips">
+                <button class="chip active" data-provider="all" onclick="filterProvider('all')">
+                    All Providers
+                </button>
+                <button class="chip" data-provider="openai" onclick="filterProvider('openai')">
+                    <span class="chip-dot"></span> OpenAI
+                </button>
+                <button class="chip" data-provider="anthropic" onclick="filterProvider('anthropic')">
+                    <span class="chip-dot"></span> Anthropic
+                </button>
+                <button class="chip" data-provider="google" onclick="filterProvider('google')">
+                    <span class="chip-dot"></span> Google
+                </button>
+                <button class="chip" data-provider="aws" onclick="filterProvider('aws')">
+                    <span class="chip-dot"></span> AWS
+                </button>
+                <button class="chip" data-provider="azure" onclick="filterProvider('azure')">
+                    <span class="chip-dot"></span> Azure
+                </button>
+                <button class="chip" data-provider="gcp" onclick="filterProvider('gcp')">
+                    <span class="chip-dot"></span> GCP
+                </button>
+            </div>
+        </nav>
 
-                <!-- Provider -->
-                <section class="panel" id="step-provider">
-                    <h2>🤖 Which AI?</h2>
-                    <div class="provider-grid" id="provider-grid">
-                        <!-- Populated by JS -->
-                    </div>
-                    <div class="provider-more">
-                        <select id="provider-dropdown" onchange="selectDropdownProvider(this)">
-                            <option value="">More providers...</option>
-                        </select>
-                    </div>
-                </section>
+        <!-- The Map (hero) -->
+        <main class="map-container">
+            <div id="map"></div>
 
-                <!-- Model -->
-                <section class="panel hidden" id="step-model">
-                    <h2>🎯 Pick a model</h2>
-                    <div class="model-list" id="model-grid">
-                        <!-- Populated by JS -->
+            <!-- Legend overlay -->
+            <div class="map-legend">
+                <div class="legend-title">Grid Carbon Intensity</div>
+                <div class="legend-scale">
+                    <div class="legend-item">
+                        <span class="legend-color green"></span>
+                        <span>&lt; 100g</span>
+                        <span class="legend-label">Clean</span>
                     </div>
-                </section>
-
-                <!-- Task/Usage -->
-                <section class="panel hidden" id="step-task">
-                    <h2>⏱️ How will you use it?</h2>
-                    <div class="task-grid">
-                        <button class="task-btn" onclick="selectTask('quick', this)">
-                            <span class="task-icon">💬</span>
-                            <span class="task-label">Quick chat</span>
-                            <span class="task-sub">~500ms</span>
-                        </button>
-                        <button class="task-btn" onclick="selectTask('standard', this)">
-                            <span class="task-icon">✍️</span>
-                            <span class="task-label">Writing</span>
-                            <span class="task-sub">~3s</span>
-                        </button>
-                        <button class="task-btn" onclick="selectTask('complex', this)">
-                            <span class="task-icon">🧠</span>
-                            <span class="task-label">Deep thinking</span>
-                            <span class="task-sub">~10s</span>
-                        </button>
+                    <div class="legend-item">
+                        <span class="legend-color yellow"></span>
+                        <span>100-300g</span>
+                        <span class="legend-label">Moderate</span>
                     </div>
-                </section>
-
-                <!-- Methodology (quiet panel) -->
-                <section class="panel panel--quiet">
-                    <details>
-                        <summary>📚 Methodology</summary>
-                        <div class="quiet-content">
-                            <div class="formula-box">
-                                <code>CO₂ = Energy × PUE × Grid Intensity</code>
-                            </div>
-                            <p class="quiet-text">Energy estimates from <a href="https://arxiv.org/abs/2311.16863" target="_blank">Luccioni et al. 2023</a> and <a href="https://arxiv.org/abs/2104.10350" target="_blank">Patterson et al. 2021</a>. Grid intensity from <a href="https://www.iea.org/data-and-statistics" target="_blank">IEA</a>.</p>
-                        </div>
-                    </details>
-                </section>
+                    <div class="legend-item">
+                        <span class="legend-color orange"></span>
+                        <span>300-500g</span>
+                        <span class="legend-label">High</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color red"></span>
+                        <span>&gt; 500g</span>
+                        <span class="legend-label">Very High</span>
+                    </div>
+                </div>
+                <div class="legend-unit">g CO₂ per kWh</div>
             </div>
 
-            <!-- RIGHT: Results -->
-            <div class="result-col">
-                <!-- Hero metric panel -->
-                <section class="panel panel--hero" id="step-results">
-                    <div class="hero-header">
-                        <span class="live-dot"></span>
-                        <span class="live-label">LIVE ESTIMATE</span>
-                    </div>
-
-                    <div class="hero-metric">
-                        <span class="metric-value" id="result-per-request">--</span>
-                        <span class="metric-unit">g CO₂ / request</span>
-                    </div>
-
-                    <div class="hero-context">
-                        <div class="context-item">
-                            <span class="context-label">Grid</span>
-                            <span class="context-value" id="result-intensity">--</span>
-                            <span class="context-unit">g/kWh</span>
-                        </div>
-                        <div class="context-item">
-                            <span class="context-label">Power</span>
-                            <span class="context-value" id="detail-power">--</span>
-                            <span class="context-unit">W</span>
-                        </div>
-                        <div class="context-item">
-                            <span class="context-label">Region</span>
-                            <span class="context-value" id="detail-datacenter">--</span>
-                        </div>
-                    </div>
-
-                    <div class="hero-details">
-                        <div class="detail-row">
-                            <span class="detail-label">Provider</span>
-                            <span class="detail-value" id="detail-provider">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Model</span>
-                            <span class="detail-value" id="detail-model">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Your location</span>
-                            <span class="detail-value" id="detail-location">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Renewables</span>
-                            <span class="detail-value" id="detail-renewables">--</span>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Comparisons (quiet) -->
-                <section class="panel panel--quiet" id="comparison-section">
-                    <h3>🌍 Cleanest regions for this provider</h3>
-                    <div class="comparison-list" id="comparison-list">
-                        <!-- Populated by JS -->
-                    </div>
-                </section>
-
-                <!-- Usage scenarios (quiet) -->
-                <section class="panel panel--quiet" id="scenarios-section">
-                    <h3>📊 At scale</h3>
-                    <div class="scenario-grid" id="scenario-grid">
-                        <!-- Populated by JS -->
-                    </div>
-                </section>
-
-                <!-- Detection explanation (quiet) -->
-                <section class="panel panel--quiet" id="detection-section">
-                    <details>
-                        <summary>🔍 Why this datacenter?</summary>
-                        <div class="quiet-content" id="explanation-content">
-                            <!-- Populated by JS -->
-                        </div>
-                    </details>
-                </section>
-
-                <!-- Formula explanation (quiet) -->
-                <section class="panel panel--quiet">
-                    <details>
-                        <summary>🧮 How we calculate</summary>
-                        <div class="quiet-content">
-                            <div class="formula-box">
-                                <code>CO₂ (g) = Energy (kWh) × PUE × Grid Intensity (g/kWh)</code>
-                            </div>
-                            <div class="formula-breakdown">
-                                <p class="quiet-text"><strong>Energy</strong> = Power (W) ÷ 1000 × Time (hours)</p>
-                                <p class="quiet-text"><strong>PUE</strong> = 1.2 (datacenter overhead)</p>
-                                <p class="quiet-text"><strong>Grid</strong> = Regional carbon intensity</p>
-                            </div>
-                        </div>
-                    </details>
-                </section>
-
-                <!-- Power tiers (quiet) -->
-                <section class="panel panel--quiet">
-                    <details>
-                        <summary>⚡ Model power tiers</summary>
-                        <div class="quiet-content">
-                            <table class="power-table">
-                                <tr><td>Small</td><td>50-150W</td><td>Haiku, Gemini Flash</td></tr>
-                                <tr><td>Medium</td><td>150-350W</td><td>GPT-5.2 Instant, Sonnet</td></tr>
-                                <tr><td>Large</td><td>350-600W</td><td>GPT-5.2 Pro, Opus</td></tr>
-                                <tr><td>Image</td><td>300-600W</td><td>DALL-E, Stable Diffusion</td></tr>
-                            </table>
-                            <p class="quiet-text">Based on <a href="https://arxiv.org/abs/2311.16863" target="_blank">Luccioni et al. 2023</a></p>
-                        </div>
-                    </details>
-                </section>
+            <!-- Quick insight overlay -->
+            <div class="map-insight" id="map-insight">
+                <span class="insight-icon">💡</span>
+                <span class="insight-text">Click a datacenter to see its carbon footprint</span>
             </div>
         </main>
 
-        <!-- Bottom stats bar -->
-        <footer class="stats-bar">
-            <div class="stat">
-                <span class="stat-value" id="stat-cleanest-region">--</span>
-                <span class="stat-label">Cleanest</span>
+        <!-- Details panel (bottom) -->
+        <section class="details-panel" id="details-panel">
+            <div class="details-empty" id="details-empty">
+                <p>👆 Select a datacenter on the map to see emissions details</p>
             </div>
-            <div class="stat">
-                <span class="stat-value" id="stat-dirtiest-region">--</span>
-                <span class="stat-label">Highest</span>
+
+            <div class="details-content hidden" id="details-content">
+                <!-- Selected location -->
+                <div class="detail-card detail-card--hero">
+                    <div class="detail-header">
+                        <span class="detail-location" id="detail-location">Stockholm, Sweden</span>
+                        <span class="detail-region" id="detail-region">eu-north-1</span>
+                    </div>
+                    <div class="detail-metrics">
+                        <div class="metric">
+                            <span class="metric-value" id="detail-intensity">45</span>
+                            <span class="metric-label">g CO₂/kWh</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value" id="detail-renewable">95%</span>
+                            <span class="metric-label">Renewable</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value green" id="detail-rating">A+</span>
+                            <span class="metric-label">Rating</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Per-request estimate -->
+                <div class="detail-card">
+                    <h3>Per Request Estimate</h3>
+                    <div class="estimate-row">
+                        <span class="estimate-label">Single GPT-4 request here:</span>
+                        <span class="estimate-value" id="estimate-value">0.02g CO₂</span>
+                    </div>
+                    <div class="estimate-context" id="estimate-context">
+                        That's <strong>3x cleaner</strong> than running in Virginia (US)
+                    </div>
+                </div>
+
+                <!-- Comparison -->
+                <div class="detail-card">
+                    <h3>🌍 If you moved here from...</h3>
+                    <div class="comparison-list" id="comparison-list">
+                        <div class="comparison-row">
+                            <span class="comparison-from">Virginia, US</span>
+                            <span class="comparison-arrow">→</span>
+                            <span class="comparison-saving green">-88% emissions</span>
+                        </div>
+                        <div class="comparison-row">
+                            <span class="comparison-from">Frankfurt, DE</span>
+                            <span class="comparison-arrow">→</span>
+                            <span class="comparison-saving green">-88% emissions</span>
+                        </div>
+                        <div class="comparison-row">
+                            <span class="comparison-from">Tokyo, JP</span>
+                            <span class="comparison-arrow">→</span>
+                            <span class="comparison-saving green">-90% emissions</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scale impact -->
+                <div class="detail-card">
+                    <h3>📊 At Scale (1M requests/month)</h3>
+                    <div class="scale-grid">
+                        <div class="scale-item">
+                            <span class="scale-value" id="scale-here">20 kg</span>
+                            <span class="scale-label">Here</span>
+                        </div>
+                        <div class="scale-vs">vs</div>
+                        <div class="scale-item">
+                            <span class="scale-value muted" id="scale-virginia">169 kg</span>
+                            <span class="scale-label">Virginia</span>
+                        </div>
+                        <div class="scale-saving">
+                            <span class="scale-saved green" id="scale-saved">Save 149 kg/month</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat">
-                <span class="stat-value" id="stat-regions">--</span>
-                <span class="stat-label">Regions</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value" id="stat-requests">0</span>
-                <span class="stat-label">Calculations</span>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-stats">
+                <span class="stat"><strong id="stat-cleanest">Quebec</strong> cleanest</span>
+                <span class="stat-divider">•</span>
+                <span class="stat"><strong id="stat-dirtiest">Poland</strong> highest emissions</span>
+                <span class="stat-divider">•</span>
+                <span class="stat"><strong id="stat-count">50+</strong> datacenters mapped</span>
             </div>
             <div class="footer-links">
-                <a href="/docs">API</a>
-                <a href="/v1/analytics">Analytics</a>
+                <span class="footer-credit">by <a href="mailto:sva@atlasintelligence.dk">Atlas Intelligence</a></span>
             </div>
         </footer>
     </div>
 
-    <!-- Hidden elements for JS compatibility -->
-    <input type="hidden" id="latency-input" value="2000">
-    <div class="hidden" id="result-empty"></div>
-    <div class="hidden" id="result-hero-section"></div>
-    <div class="hidden" id="result-rating"></div>
-    <div class="hidden" id="model-source"></div>
-    <div class="hidden" id="comparison-visual"></div>
-    <div class="hidden" id="bar-container"></div>
-    <div class="hidden" id="savings-text"></div>
-    <div class="hidden" id="equivalents-section"></div>
-    <div class="hidden" id="equivalents-grid"></div>
-    <div class="hidden" id="estimate-result"></div>
-    <div class="hidden" id="estimate-equivalent"></div>
-    <div class="hidden" id="bulb-time"></div>
-    <div class="hidden" id="impact-fill"></div>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/static/app.js"></script>
-    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
