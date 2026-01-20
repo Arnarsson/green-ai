@@ -79,6 +79,15 @@
                     </details>
                 </div>
 
+                <!-- Location comparison visual -->
+                <div class="comparison-visual" id="comparison-visual">
+                    <h3>How your location compares</h3>
+                    <div class="bar-container" id="bar-container">
+                        <!-- Populated by JS -->
+                    </div>
+                    <p class="savings-text" id="savings-text"></p>
+                </div>
+
                 <!-- Usage Scenarios -->
                 <div class="scenarios-section">
                     <h3>What does this mean in practice?</h3>
@@ -95,20 +104,41 @@
                     </div>
                 </div>
 
-                <!-- Per-request estimate -->
+                <!-- Task-based estimate -->
                 <div class="estimate-box">
-                    <h3>Calculate your own scenario</h3>
-                    <div class="estimate-inputs">
-                        <div class="input-group">
-                            <label>Response time (ms)</label>
-                            <input type="number" id="latency-input" value="2500" min="100" max="60000">
-                        </div>
-                        <button class="btn-primary" onclick="calculateEmissions()">Calculate</button>
+                    <h3>Estimate a specific task</h3>
+
+                    <div class="task-selector-grid">
+                        <button class="task-btn" onclick="selectTask('quick', this)">
+                            <span class="task-icon">⚡</span>
+                            <span class="task-label">Quick Answer</span>
+                            <span class="task-sub">Fact check, definition</span>
+                        </button>
+                        <button class="task-btn" onclick="selectTask('standard', this)">
+                            <span class="task-icon">📝</span>
+                            <span class="task-label">Short Writing</span>
+                            <span class="task-sub">Email, summary</span>
+                        </button>
+                        <button class="task-btn" onclick="selectTask('complex', this)">
+                            <span class="task-icon">🧠</span>
+                            <span class="task-label">Deep Dive</span>
+                            <span class="task-sub">Coding, essay, reasoning</span>
+                        </button>
                     </div>
+
+                    <input type="hidden" id="latency-input" value="2000">
+
                     <div class="estimate-result hidden" id="estimate-result">
-                        <span class="estimate-value" id="estimate-emissions">-</span>
-                        <span class="estimate-label">grams CO₂ per request</span>
-                        <div class="estimate-equivalent" id="estimate-equivalent"></div>
+                        <div class="impact-hero">
+                            <span class="impact-value" id="estimate-emissions">-</span>
+                            <span class="impact-unit">g CO₂</span>
+                        </div>
+                        <p class="impact-equivalent" id="estimate-equivalent"></p>
+
+                        <div class="impact-meter">
+                            <div class="meter-fill" id="impact-fill"></div>
+                        </div>
+                        <p class="impact-context">That's like keeping a LED bulb on for <span id="bulb-time">-</span> minutes.</p>
                     </div>
                 </div>
 

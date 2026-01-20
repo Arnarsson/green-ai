@@ -12,6 +12,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "slowapi>=0.1.9",
     "dnspython>=2.4.0",
+    "tenacity>=8.2.0",
 ]
 
 [tool.black]

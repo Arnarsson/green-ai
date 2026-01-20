@@ -18,6 +18,13 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+)
 
 from .config import settings
 
@@ -25,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 # Simple in-memory cache for IP geolocation results
 _ip_cache: dict[str, tuple[dict, datetime]] = {}
+
+# Circuit breaker state for external services
+_circuit_breaker_state = {"ip_api": {"failures": 0, "last_failure": None, "is_open": False}}
+CIRCUIT_BREAKER_THRESHOLD = 5  # failures before opening circuit
+CIRCUIT_BREAKER_RESET_TIME = 60  # seconds before trying again
 
 
 def _get_cached_ip_result(ip: str) -> Optional[dict]:
@@ -254,13 +266,84 @@ def _detect_by_headers(headers: dict) -> Optional[dict]:
     return None
 
 
+def _check_circuit_breaker(service: str) -> bool:
+    """Check if circuit breaker is open (should skip the call)."""
+    state = _circuit_breaker_state.get(service, {})
+    if not state.get("is_open"):
+        return False
+
+    # Check if enough time has passed to try again
+    last_failure = state.get("last_failure")
+    if (
+        last_failure
+        and (datetime.now() - last_failure).total_seconds() > CIRCUIT_BREAKER_RESET_TIME
+    ):
+        # Reset circuit breaker (half-open state)
+        state["is_open"] = False
+        state["failures"] = 0
+        logger.info(f"Circuit breaker for {service} reset to half-open state")
+        return False
+
+    return True
+
+
+def _record_failure(service: str) -> None:
+    """Record a failure and potentially open the circuit breaker."""
+    state = _circuit_breaker_state.setdefault(
+        service, {"failures": 0, "last_failure": None, "is_open": False}
+    )
+    state["failures"] += 1
+    state["last_failure"] = datetime.now()
+
+    if state["failures"] >= CIRCUIT_BREAKER_THRESHOLD:
+        state["is_open"] = True
+        logger.warning(f"Circuit breaker for {service} OPENED after {state['failures']} failures")
+
+
+def _record_success(service: str) -> None:
+    """Record a success and reset failure count."""
+    state = _circuit_breaker_state.get(service)
+    if state:
+        state["failures"] = 0
+        state["is_open"] = False
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=0.5, min=0.5, max=2),
+    retry=retry_if_exception_type((httpx.TimeoutException, httpx.ConnectError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+async def _fetch_ip_geolocation(ip: str) -> Optional[dict]:
+    """Fetch IP geolocation with tenacity retry logic."""
+    async with httpx.AsyncClient() as client:
+        url = f"http://ip-api.com/json/{ip}"
+        params = "?fields=status,country,countryCode,city,lat,lon,isp"
+        response = await client.get(
+            url + params,
+            timeout=settings.ip_geolocation_timeout,
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") == "success":
+                return data
+        return None
+
+
 async def _detect_by_ip(hostname: str) -> Optional[dict]:
     """
     Use IP geolocation to estimate location.
 
     Confidence: ~65% (IP shows edge/proxy, not always compute location)
-    Includes retry logic and caching.
+    Includes circuit breaker, retry logic, and caching.
     """
+    # Check circuit breaker first
+    if _check_circuit_breaker("ip_api"):
+        logger.debug("Circuit breaker open for ip_api, skipping geolocation")
+        return None
+
     try:
         # Resolve hostname to IP
         ip = socket.gethostbyname(hostname)
@@ -270,60 +353,35 @@ async def _detect_by_ip(hostname: str) -> Optional[dict]:
         if cached_result:
             return cached_result
 
-        # Retry configuration
-        max_retries = 2
-        retry_delay = 0.5
+        # Fetch with retry logic
+        data = await _fetch_ip_geolocation(ip)
 
-        for attempt in range(max_retries + 1):
-            try:
-                async with httpx.AsyncClient() as client:
-                    url = f"http://ip-api.com/json/{ip}"
-                    params = "?fields=status,country,countryCode,city,lat,lon,isp"
-                    response = await client.get(
-                        url + params,
-                        timeout=settings.ip_geolocation_timeout,
-                    )
+        if data:
+            result = {
+                "provider": "detected-via-ip",
+                "region": data.get("city", "unknown").lower(),
+                "country": data.get("countryCode", "unknown"),
+                "confidence": 0.65,
+                "method": "ip-geolocation",
+                "details": {
+                    "ip": ip,
+                    "city": data.get("city"),
+                    "coordinates": [data.get("lat"), data.get("lon")],
+                    "isp": data.get("isp"),
+                },
+            }
+            # Cache the result
+            _cache_ip_result(ip, result)
+            _record_success("ip_api")
+            return result
 
-                    if response.status_code == 200:
-                        data = response.json()
-
-                        if data.get("status") == "success":
-                            result = {
-                                "provider": "detected-via-ip",
-                                "region": data.get("city", "unknown").lower(),
-                                "country": data.get("countryCode", "unknown"),
-                                "confidence": 0.65,
-                                "method": "ip-geolocation",
-                                "details": {
-                                    "ip": ip,
-                                    "city": data.get("city"),
-                                    "coordinates": [data.get("lat"), data.get("lon")],
-                                    "isp": data.get("isp"),
-                                },
-                            }
-                            # Cache the result
-                            _cache_ip_result(ip, result)
-                            return result
-
-                    # If we got a response but it wasn't successful, don't retry
-                    break
-
-            except (httpx.TimeoutException, httpx.ConnectError) as e:
-                if attempt < max_retries:
-                    logger.warning(
-                        f"IP geolocation attempt {attempt + 1} failed for {hostname}: {e}. "
-                        "Retrying..."
-                    )
-                    await asyncio.sleep(retry_delay * (attempt + 1))
-                else:
-                    logger.warning(
-                        f"IP geolocation failed for {hostname} "
-                        f"after {max_retries + 1} attempts: {e}"
-                    )
-
+    except (httpx.TimeoutException, httpx.ConnectError) as e:
+        _record_failure("ip_api")
+        logger.warning(f"IP geolocation failed for {hostname} after retries: {e}")
     except socket.gaierror as e:
         logger.warning(f"DNS resolution failed for {hostname}: {e}")
     except Exception as e:
+        _record_failure("ip_api")
         logger.warning(f"IP geolocation failed for {hostname}: {e}")
 
     return None

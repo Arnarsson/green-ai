@@ -82,6 +82,14 @@ const EQUIVALENTS = {
     streaming: { perUnit: 0.6, unit: 'minutes of Netflix', icon: '📺' }  // 36g/hour = 0.6g/min
 };
 
+// Task complexity mapping (human tasks → machine latency in ms)
+// Sources: Empirical measurements from AI provider benchmarks
+const TASK_MAPPING = {
+    'quick': { latency: 500, power: 300, label: 'Quick Answer' },      // Simple lookup, 0.5 sec
+    'standard': { latency: 3000, power: 400, label: 'Short Writing' }, // Email/summary, 3 sec
+    'complex': { latency: 10000, power: 500, label: 'Deep Dive' }      // Coding/reasoning, 10 sec
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
@@ -369,20 +377,23 @@ function displayResults(result) {
     // Main intensity display
     document.getElementById('result-intensity').textContent = intensity;
 
-    // Rating
+    // Rating with traffic light background
     const ratingEl = document.getElementById('result-rating');
-    if (intensity <= 100) {
+    const heroEl = document.querySelector('.result-hero');
+    heroEl.classList.remove('traffic-green', 'traffic-yellow', 'traffic-red');
+
+    if (intensity <= 150) {
         ratingEl.textContent = 'Excellent - Very Low Carbon';
         ratingEl.className = 'result-rating rating-excellent';
-    } else if (intensity <= 200) {
+        heroEl.classList.add('traffic-green');
+    } else if (intensity <= 300) {
         ratingEl.textContent = 'Good - Low Carbon';
         ratingEl.className = 'result-rating rating-good';
-    } else if (intensity <= 350) {
-        ratingEl.textContent = 'Moderate';
-        ratingEl.className = 'result-rating rating-moderate';
+        heroEl.classList.add('traffic-yellow');
     } else {
         ratingEl.textContent = 'High Carbon';
         ratingEl.className = 'result-rating rating-poor';
+        heroEl.classList.add('traffic-red');
     }
 
     // Details
@@ -393,6 +404,9 @@ function displayResults(result) {
 
     // Show detection explanation
     showExplanation(result);
+
+    // Show comparison visual (your location vs best)
+    showComparisonVisual(result);
 
     // Show usage scenarios
     showScenarios(result);
@@ -523,7 +537,95 @@ function showComparison(result) {
     });
 }
 
-// Calculate emissions for a single request
+// Select task type (replaces manual latency input)
+function selectTask(taskType, btnElement) {
+    if (!currentResult) {
+        alert('Please select a location and AI provider first');
+        return;
+    }
+
+    // Update button state
+    document.querySelectorAll('.task-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+
+    // Set hidden latency value from task mapping
+    const task = TASK_MAPPING[taskType];
+    document.getElementById('latency-input').value = task.latency;
+
+    // Calculate immediately (no need to click "Calculate")
+    calculateEmissionsForTask(taskType);
+}
+
+// Calculate emissions for selected task
+async function calculateEmissionsForTask(taskType) {
+    if (!currentResult) return;
+
+    const task = TASK_MAPPING[taskType];
+    const latency = task.latency;
+    const power = task.power;
+
+    try {
+        const response = await fetch(`${API_BASE}/v1/estimate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                latency_ms: latency,
+                provider: currentResult.provider,
+                region: currentResult.region.region_code,
+                power_watts: power
+            })
+        });
+
+        const data = await response.json();
+
+        // Show result
+        document.getElementById('estimate-result').classList.remove('hidden');
+        document.getElementById('estimate-emissions').textContent = data.emissions_g.toFixed(4);
+
+        // Show human-readable equivalent
+        const equivalentText = getEquivalentText(data.emissions_g);
+        document.getElementById('estimate-equivalent').textContent = equivalentText;
+
+        // Update impact meter (visual bar)
+        updateImpactMeter(data.emissions_g);
+
+        // Calculate LED bulb equivalent (10W LED bulb)
+        // LED uses 0.01 kWh per hour, at average grid ~400g/kWh = 4g CO2/hour = 0.067g/min
+        const ledMinutes = (data.emissions_g / 0.067).toFixed(1);
+        document.getElementById('bulb-time').textContent = ledMinutes;
+
+        // Show equivalents for daily usage (assume 50 requests)
+        const dailyEmissions = data.emissions_g * 50;
+        showEquivalents(dailyEmissions);
+
+        // Update analytics
+        loadAnalytics();
+    } catch (error) {
+        console.error('Failed to calculate:', error);
+    }
+}
+
+// Update the impact meter visual
+function updateImpactMeter(emissionsG) {
+    const meter = document.getElementById('impact-fill');
+    if (!meter) return;
+
+    // Scale: 0g = 0%, 1g = 100% (most single requests are < 1g)
+    const percent = Math.min(100, (emissionsG / 0.5) * 100);
+    meter.style.width = `${percent}%`;
+
+    // Color based on emission level
+    meter.classList.remove('green', 'yellow', 'red');
+    if (emissionsG < 0.05) {
+        meter.classList.add('green');
+    } else if (emissionsG < 0.2) {
+        meter.classList.add('yellow');
+    } else {
+        meter.classList.add('red');
+    }
+}
+
+// Calculate emissions for a single request (legacy, kept for compatibility)
 async function calculateEmissions() {
     if (!currentResult) return;
 
@@ -549,6 +651,14 @@ async function calculateEmissions() {
         // Show human-readable equivalent
         const equivalentText = getEquivalentText(data.emissions_g);
         document.getElementById('estimate-equivalent').textContent = equivalentText;
+
+        // Update impact meter
+        updateImpactMeter(data.emissions_g);
+
+        // Calculate LED bulb equivalent
+        const ledMinutes = (data.emissions_g / 0.067).toFixed(1);
+        const bulbEl = document.getElementById('bulb-time');
+        if (bulbEl) bulbEl.textContent = ledMinutes;
 
         // Show equivalents for daily usage (assume 50 requests)
         const dailyEmissions = data.emissions_g * 50;
@@ -612,4 +722,52 @@ function showExplanation(result) {
     }
 
     content.innerHTML = html;
+}
+
+// Show comparison visual (your location vs best available)
+function showComparisonVisual(result) {
+    const container = document.getElementById('bar-container');
+    const savingsText = document.getElementById('savings-text');
+    if (!container || !savingsText) return;
+
+    const yourIntensity = result.region.intensity_g_kwh;
+
+    // Find the cleanest region for this cloud provider
+    const cloudProvider = result.region.provider;
+    const cloudRegions = regions.filter(r => r.provider === cloudProvider);
+    const cleanest = cloudRegions.sort((a, b) => a.intensity_g_kwh - b.intensity_g_kwh)[0];
+
+    // Find maximum for scaling
+    const maxIntensity = Math.max(yourIntensity, 500);
+
+    // Calculate widths as percentages
+    const yourWidth = Math.max(10, (yourIntensity / maxIntensity) * 100);
+    const cleanestWidth = Math.max(10, (cleanest.intensity_g_kwh / maxIntensity) * 100);
+
+    // Determine bar colors
+    const yourClass = yourIntensity <= 150 ? 'positive' : yourIntensity <= 300 ? 'neutral' : 'negative';
+
+    // Build comparison bars
+    container.innerHTML = `
+        <div class="bar-row">
+            <span class="label">${result.region.city} (You)</span>
+            <div class="bar ${yourClass}" style="width: ${yourWidth}%;">${yourIntensity}g</div>
+        </div>
+        <div class="bar-row">
+            <span class="label">${cleanest.city} (Best)</span>
+            <div class="bar positive" style="width: ${cleanestWidth}%;">${cleanest.intensity_g_kwh}g</div>
+        </div>
+    `;
+
+    // Calculate potential savings
+    if (cleanest.region_code !== result.region.region_code) {
+        const savingsPercent = Math.round((1 - cleanest.intensity_g_kwh / yourIntensity) * 100);
+        if (savingsPercent > 0) {
+            savingsText.innerHTML = `💡 Moving this workload to <strong>${cleanest.city}</strong> would reduce emissions by <strong>${savingsPercent}%</strong>.`;
+        } else {
+            savingsText.innerHTML = `✅ You're already using one of the cleanest regions!`;
+        }
+    } else {
+        savingsText.innerHTML = `✅ You're using the cleanest available region for this provider!`;
+    }
 }
