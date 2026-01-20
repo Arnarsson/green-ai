@@ -1,35 +1,28 @@
-/* Green AI - Precise but Approachable */
+/* Green AI - Infra Grade Design */
+/* Style transferred from landing hero */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-    /* Background - subtle warmth */
-    --bg-page: #0f1117;
-    --bg-card: #161b22;
-    --bg-card-hover: #1c222b;
-    --bg-elevated: #1e252f;
+    /* Exact tokens from reference */
+    --bg-main: #0B0F0E;
+    --bg-surface: #111716;
+    --bg-surface-2: #0E1312;
 
-    /* Borders - softer */
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-active: rgba(255, 255, 255, 0.15);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-active: rgba(255, 255, 255, 0.1);
 
-    /* Text hierarchy */
-    --text-primary: #f0f2f5;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --text-primary: #E6F1ED;
+    --text-secondary: #9FB6AE;
+    --text-muted: #6C837C;
 
-    /* Green - primary accent, used sparingly */
-    --accent-green: #4ADE80;
-    --accent-green-soft: rgba(74, 222, 128, 0.12);
-    --accent-green-glow: rgba(74, 222, 128, 0.15);
+    /* Green = output or action ONLY */
+    --accent-green: #2FB67E;
+    --accent-green-soft: rgba(47, 182, 126, 0.15);
+    --accent-green-glow: rgba(47, 182, 126, 0.3);
 
-    /* Supporting colors */
-    --accent-blue: #60a5fa;
-    --accent-yellow: #fbbf24;
-    --accent-red: #f87171;
-
-    /* Badges */
-    --badge-green: rgba(74, 222, 128, 0.15);
-    --badge-yellow: rgba(251, 191, 36, 0.15);
-    --badge-red: rgba(248, 113, 113, 0.15);
+    --accent-warning: #FACC15;
+    --accent-danger: #EF4444;
 }
 
 * {
@@ -38,10 +31,9 @@
     box-sizing: border-box;
 }
 
-/* Flat background - no animation, no orbs */
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg-page);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-main);
     color: var(--text-primary);
     line-height: 1.5;
     min-height: 100vh;
@@ -49,34 +41,37 @@ body {
 }
 
 .container {
-    max-width: 720px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 1.5rem;
 }
 
 /* ============================================
-   ZONE 1: HEADER - Minimal, authoritative
+   HEADER - Minimal, authoritative
    ============================================ */
 header {
     text-align: center;
     margin-bottom: 2rem;
-    padding: 2rem 0 1.5rem;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 1.5rem 0;
 }
 
 header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     color: var(--text-primary);
     letter-spacing: -0.02em;
     margin-bottom: 0.25rem;
+}
+
+header h1 span {
+    color: var(--accent-green);
 }
 
 .powered-by {
     font-size: 0.7rem;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     margin-bottom: 0.25rem;
 }
 
@@ -85,51 +80,43 @@ header h1 {
     text-decoration: none;
 }
 
-.powered-by a:hover {
-    color: var(--text-secondary);
-}
-
 .subtitle {
     color: var(--text-secondary);
-    font-size: 0.875rem;
-    font-weight: 400;
+    font-size: 0.85rem;
 }
 
 /* ============================================
-   ZONE 1: INPUT CARDS - Clean and functional
+   CONFIGURATION PANEL - Inputs (flat, compact, boring)
    ============================================ */
 .card {
-    background: var(--bg-card);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+    background: var(--bg-surface);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
     border: 1px solid var(--border-subtle);
-    transition: border-color 0.2s ease;
-}
-
-.card:hover {
-    border-color: var(--border-active);
 }
 
 .card h2 {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.15em;
     color: var(--text-muted);
     margin-bottom: 1rem;
 }
 
 .card h3 {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.15em;
     color: var(--text-muted);
     margin-bottom: 0.75rem;
 }
 
-/* Location Selection - compact form style */
+/* Location */
 .location-options {
     display: flex;
     align-items: center;
@@ -150,41 +137,40 @@ header h1 {
 }
 
 .location-badge {
-    background: var(--bg-card-hover);
-    border: 1px solid var(--border-active);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
     color: var(--text-primary);
-    padding: 0.4rem 0.75rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 4px;
     font-weight: 500;
     font-size: 0.8rem;
 }
 
-/* Provider Grid */
+/* Provider Grid - Terminal style */
 .provider-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.5rem;
 }
 
 .provider-card {
-    background: var(--bg-card-hover);
+    background: var(--bg-surface-2);
     border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 1rem 0.75rem;
+    border-radius: 6px;
+    padding: 0.75rem 0.5rem;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease;
 }
 
 .provider-card:hover {
-    background: var(--bg-elevated);
     border-color: var(--border-active);
-    transform: translateY(-2px);
 }
 
 .provider-card.selected {
-    background: var(--accent-green-soft);
     border-color: var(--accent-green);
+    background: var(--accent-green-soft);
 }
 
 .provider-card.disabled {
@@ -194,7 +180,7 @@ header h1 {
 
 .provider-name {
     font-weight: 500;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .provider-hint {
@@ -207,74 +193,66 @@ header h1 {
     margin-top: 0.75rem;
 }
 
-.provider-more select {
-    min-width: 160px;
-}
-
 /* Buttons */
 .btn-primary {
     padding: 0.75rem 1.5rem;
     background: var(--accent-green);
-    color: #0f1117;
+    color: var(--bg-main);
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: opacity 0.15s ease;
 }
 
 .btn-primary:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
+    opacity: 0.9;
 }
 
 .btn-secondary {
-    padding: 0.7rem 1.25rem;
-    background: var(--bg-card-hover);
+    padding: 0.65rem 1rem;
+    background: var(--bg-surface-2);
     color: var(--text-primary);
-    border: 1px solid var(--border-active);
-    border-radius: 8px;
-    font-size: 0.85rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .btn-secondary:hover {
-    background: var(--bg-elevated);
-    border-color: var(--text-muted);
+    border-color: var(--border-active);
 }
 
 .btn-text {
     background: none;
     border: none;
-    color: var(--accent-green);
-    font-size: 0.8rem;
-    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.75rem;
     cursor: pointer;
     padding: 0.5rem;
-    transition: opacity 0.2s ease;
 }
 
 .btn-text:hover {
-    opacity: 0.8;
+    color: var(--text-secondary);
 }
 
 /* Select */
 select {
-    padding: 0.7rem 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-active);
-    background: var(--bg-card-hover);
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.65rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-surface-2);
     color: var(--text-primary);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     min-width: 180px;
     cursor: pointer;
-    transition: border-color 0.2s ease;
 }
 
 select:focus {
@@ -283,32 +261,32 @@ select:focus {
 }
 
 select option {
-    background: var(--bg-card);
+    background: var(--bg-surface);
 }
 
 /* ============================================
-   ZONE 1: MODEL SELECTOR
+   MODEL SELECTOR - Spec list (not cards)
    ============================================ */
 .step-hint {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
 }
 
 .model-grid {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
 }
 
 .model-card {
-    background: var(--bg-card-hover);
+    background: var(--bg-surface-2);
     border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    padding: 0.85rem 1rem;
+    border-radius: 4px;
+    padding: 0.65rem 0.85rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease;
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
@@ -316,13 +294,12 @@ select option {
 }
 
 .model-card:hover {
-    background: var(--bg-elevated);
     border-color: var(--border-active);
 }
 
 .model-card.selected {
-    background: var(--accent-green-soft);
     border-color: var(--accent-green);
+    background: var(--accent-green-soft);
 }
 
 .model-name {
@@ -331,48 +308,46 @@ select option {
 }
 
 .model-params {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     color: var(--text-muted);
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
 }
 
 .model-power {
-    font-size: 0.75rem;
-    font-weight: 600;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
     padding: 0.2rem 0.5rem;
     border-radius: 3px;
-    min-width: 50px;
+    min-width: 45px;
     text-align: center;
 }
 
 .model-power.power-low {
-    background: var(--badge-green);
+    background: var(--accent-green-soft);
     color: var(--accent-green);
 }
 
 .model-power.power-medium {
-    background: var(--badge-yellow);
-    color: var(--accent-yellow);
+    background: rgba(250, 204, 21, 0.15);
+    color: var(--accent-warning);
 }
 
 .model-power.power-high {
-    background: var(--badge-red);
-    color: var(--accent-red);
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-danger);
 }
 
-.model-note {
-    display: none;
-}
+.model-note { display: none; }
 
-/* Tier indicators - subtle left border */
-.model-card.tier-small { border-left: 3px solid var(--accent-green); }
-.model-card.tier-medium { border-left: 3px solid var(--accent-yellow); }
-.model-card.tier-large { border-left: 3px solid var(--accent-red); }
-.model-card.tier-image { border-left: 3px solid #a78bfa; }
-.model-card.tier-video { border-left: 3px solid #f472b6; }
+/* Tier indicators */
+.model-card.tier-small { border-left: 2px solid var(--accent-green); }
+.model-card.tier-medium { border-left: 2px solid var(--accent-warning); }
+.model-card.tier-large { border-left: 2px solid var(--accent-danger); }
+.model-card.tier-image { border-left: 2px solid #a78bfa; }
+.model-card.tier-video { border-left: 2px solid #f472b6; }
 
-/* Power info - collapsed by default, minimal */
+/* Power info - collapsed, minimal */
 .power-info-box {
     margin-bottom: 0.75rem;
 }
@@ -382,9 +357,6 @@ select option {
     font-size: 0.7rem;
     color: var(--text-muted);
     font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
 }
 
 .power-info-box summary:hover {
@@ -396,7 +368,7 @@ select option {
 .power-info-content {
     margin-top: 0.75rem;
     padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-surface-2);
     border-radius: 4px;
 }
 
@@ -406,7 +378,6 @@ select option {
     color: var(--text-secondary);
 }
 
-/* Power Table - data table style */
 .power-table {
     width: 100%;
     border-collapse: collapse;
@@ -422,11 +393,12 @@ select option {
 }
 
 .power-table th {
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
     color: var(--text-muted);
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
 }
 
 .power-table td {
@@ -434,15 +406,15 @@ select option {
 }
 
 .power-table td:nth-child(2) {
-    font-weight: 600;
-    font-family: 'SF Mono', Monaco, monospace;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
 }
 
-.power-table tr.tier-small td:nth-child(2) { color: var(--result-green); }
-.power-table tr.tier-medium td:nth-child(2) { color: var(--accent-yellow); }
-.power-table tr.tier-large td:nth-child(2) { color: var(--accent-red); }
-.power-table tr.tier-image td:nth-child(2) { color: #a855f7; }
-.power-table tr.tier-video td:nth-child(2) { color: #ec4899; }
+.power-table tr.tier-small td:nth-child(2) { color: var(--accent-green); }
+.power-table tr.tier-medium td:nth-child(2) { color: var(--accent-warning); }
+.power-table tr.tier-large td:nth-child(2) { color: var(--accent-danger); }
+.power-table tr.tier-image td:nth-child(2) { color: #a78bfa; }
+.power-table tr.tier-video td:nth-child(2) { color: #f472b6; }
 
 .power-sources {
     font-size: 0.7rem;
@@ -451,29 +423,21 @@ select option {
     border-top: 1px solid var(--border-subtle);
 }
 
-.power-sources strong {
-    color: var(--text-secondary);
-    display: block;
-    margin-bottom: 0.35rem;
-}
-
+.power-sources strong { color: var(--text-secondary); display: block; margin-bottom: 0.35rem; }
 .power-sources ul { margin-left: 1rem; }
 .power-sources li { margin-bottom: 0.2rem; }
-.power-sources a {
-    color: var(--accent-blue);
-    text-decoration: none;
-}
+.power-sources a { color: var(--accent-green); text-decoration: none; }
 
 .power-disclaimer {
     font-size: 0.7rem;
     color: var(--text-muted);
     padding: 0.5rem;
-    background: rgba(210, 153, 34, 0.05);
+    background: rgba(250, 204, 21, 0.05);
     border-radius: 4px;
     margin-top: 0.5rem;
 }
 
-.power-disclaimer strong { color: var(--accent-yellow); }
+.power-disclaimer strong { color: var(--accent-warning); }
 
 .model-source { margin-top: 0.5rem; }
 
@@ -481,18 +445,19 @@ select option {
     font-size: 0.7rem;
     color: var(--text-muted);
     padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-surface-2);
     border-radius: 4px;
 }
 
 /* ============================================
-   ZONE 2: RESULTS - Dramatic, isolated, heroic
+   LIVE METRIC PANEL - The Hero (matches reference)
    ============================================ */
 #step-results {
-    background: var(--bg-card);
-    border: 1px solid var(--border-active);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
     padding: 0;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     margin-bottom: 0.75rem;
 }
 
@@ -501,7 +466,7 @@ select option {
     margin-bottom: 0;
 }
 
-/* Task selector at top of results */
+/* Task selector */
 .task-selector-section {
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid var(--border-subtle);
@@ -514,28 +479,26 @@ select option {
 }
 
 .task-btn {
-    background: var(--bg-card-hover);
+    background: var(--bg-surface-2);
     border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 1rem 0.75rem;
+    border-radius: 6px;
+    padding: 0.75rem 0.5rem;
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 .task-btn:hover {
-    background: var(--bg-elevated);
     border-color: var(--border-active);
-    transform: translateY(-2px);
 }
 
 .task-btn.active {
-    background: var(--accent-green-soft);
     border-color: var(--accent-green);
+    background: var(--accent-green-soft);
 }
 
 .task-btn.loading {
@@ -553,7 +516,7 @@ select option {
     height: 12px;
     margin-top: -6px;
     border: 1.5px solid var(--border-subtle);
-    border-top-color: var(--text-secondary);
+    border-top-color: var(--accent-green);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -575,147 +538,164 @@ select option {
     font-size: 0.85rem;
 }
 
-/* THE HERO NUMBER - This is where all visual budget goes */
+/* THE LIVE TRACKING HERO - Matches reference exactly */
 .result-hero {
-    text-align: center;
-    padding: 3rem 1.5rem 2.5rem;
-    background: linear-gradient(180deg, rgba(74, 222, 128, 0.06) 0%, transparent 100%);
-    border-radius: 12px 12px 0 0;
+    padding: 2rem 1.5rem;
+}
+
+/* Live indicator */
+.result-hero::before {
+    content: '● LIVE TRACKING';
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.result-hero::before {
+    color: var(--accent-green);
 }
 
 .result-main {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Label above number */
+.result-main::before {
+    content: 'CO₂ EMISSIONS (g)';
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
 }
 
 .result-big {
-    display: block;
-    font-size: 4.5rem;
-    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 3.5rem;
+    font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
     color: var(--accent-green);
-    font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 60px var(--accent-green-glow);
 }
 
 .result-unit {
     display: block;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-top: 0.75rem;
-    font-weight: 500;
-}
-
-.result-rating {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
-    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
     letter-spacing: 0.05em;
 }
 
-.rating-excellent {
-    background: var(--badge-green);
-    color: var(--accent-green);
+.result-rating {
+    display: none; /* Hidden - the number speaks for itself */
 }
 
-.rating-good {
-    background: rgba(96, 165, 250, 0.15);
-    color: var(--accent-blue);
-}
-
-.rating-moderate {
-    background: var(--badge-yellow);
-    color: var(--accent-yellow);
-}
-
-.rating-poor {
-    background: var(--badge-red);
-    color: var(--accent-red);
-}
-
-/* Traffic light on hero */
+/* Traffic light colors on number */
 .result-hero.traffic-green .result-big { color: var(--accent-green); }
-.result-hero.traffic-yellow .result-big { color: var(--accent-yellow); }
-.result-hero.traffic-red .result-big { color: var(--accent-red); }
+.result-hero.traffic-yellow .result-big { color: var(--accent-warning); }
+.result-hero.traffic-red .result-big { color: var(--accent-danger); }
 
-/* Grid context - secondary info below hero */
+/* Secondary metrics row (like REQUESTS / AVG/REQUEST in reference) */
 .grid-context {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem;
-    font-size: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface-2);
 }
 
-.context-label { color: var(--text-muted); }
-.context-value { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
-.context-unit { color: var(--text-muted); }
+.grid-context::before {
+    content: 'GRID INTENSITY';
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+}
 
-/* Details grid - compact spec list */
+.context-label { display: none; }
+
+.context-value {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent-green);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.context-unit {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Details grid - Info panels side by side (like PROVIDER / REGION in reference) */
 .result-details-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border-subtle);
-    margin: 0;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface-2);
 }
 
 .detail-item {
-    padding: 0.75rem;
-    background: var(--bg-card);
+    background: var(--bg-surface);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
 }
 
 .detail-label {
     display: block;
-    font-size: 0.6rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
     color: var(--text-muted);
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.25rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.15em;
     font-weight: 500;
 }
 
 .detail-value {
-    font-weight: 600;
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 0.85rem;
 }
 
 .detail-value.power-low { color: var(--accent-green); }
-.detail-value.power-medium { color: var(--accent-yellow); }
-.detail-value.power-high { color: var(--accent-red); }
+.detail-value.power-medium { color: var(--accent-warning); }
+.detail-value.power-high { color: var(--accent-danger); }
 
 /* ============================================
-   ZONE 3: EXPLANATIONS - Secondary info
+   SECONDARY PANELS - Demoted, collapsible
    ============================================ */
-
-/* Visual separation */
 .detection-explanation,
 .formula-explanation,
 .comparison-visual,
 .scenarios-section,
 .equivalents-section,
 .comparison-section {
-    margin: 0;
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-subtle);
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--bg-surface-2);
 }
 
 .detection-explanation summary,
 .formula-explanation summary {
     cursor: pointer;
-    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
     color: var(--text-muted);
     font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .detection-explanation summary:hover,
@@ -739,8 +719,8 @@ select option {
 }
 
 .step-number {
-    background: var(--bg-card-hover);
-    color: var(--text-secondary);
+    background: var(--bg-surface);
+    color: var(--text-muted);
     width: 18px;
     height: 18px;
     border-radius: 50%;
@@ -755,19 +735,17 @@ select option {
 .step-text { flex: 1; }
 .step-text strong { color: var(--text-primary); }
 
-/* Formula box */
 .formula-box {
-    background: var(--bg-card-hover);
+    background: var(--bg-surface);
     border-radius: 4px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    text-align: center;
 }
 
 .formula-box code {
-    font-family: 'SF Mono', Monaco, monospace;
-    font-size: 0.8rem;
-    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-green);
 }
 
 .formula-breakdown {
@@ -785,6 +763,7 @@ select option {
 }
 
 .formula-item strong {
+    font-family: 'JetBrains Mono', monospace;
     color: var(--text-primary);
     min-width: 100px;
 }
@@ -796,22 +775,12 @@ select option {
     border-top: 1px solid var(--border-subtle);
 }
 
-.formula-sources strong {
-    color: var(--text-secondary);
-}
-
-.formula-sources ul {
-    margin-top: 0.35rem;
-    margin-left: 1rem;
-}
-
+.formula-sources strong { color: var(--text-secondary); }
+.formula-sources ul { margin-top: 0.35rem; margin-left: 1rem; }
 .formula-sources li { margin-bottom: 0.2rem; }
-.formula-sources a {
-    color: var(--accent-blue);
-    text-decoration: none;
-}
+.formula-sources a { color: var(--accent-green); text-decoration: none; }
 
-/* Comparison Visual */
+/* Comparison bars */
 .comparison-visual h3 { margin-bottom: 0.75rem; }
 
 .bar-container {
@@ -827,8 +796,9 @@ select option {
 }
 
 .bar-row .label {
+    font-family: 'JetBrains Mono', monospace;
     min-width: 100px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     color: var(--text-secondary);
 }
@@ -840,79 +810,73 @@ select option {
     align-items: center;
     justify-content: flex-end;
     padding: 0 0.5rem;
-    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
     font-weight: 600;
-    color: white;
+    color: var(--bg-main);
     min-width: 40px;
-    transition: width 0.3s ease;
 }
 
 .bar-row .bar.positive { background: var(--accent-green); }
-.bar-row .bar.negative { background: var(--accent-red); }
-.bar-row .bar.neutral { background: var(--accent-yellow); color: var(--bg-page); }
-.bar-row .bar.current { background: var(--accent-blue); }
+.bar-row .bar.negative { background: var(--accent-danger); }
+.bar-row .bar.neutral { background: var(--accent-warning); }
+.bar-row .bar.current { background: var(--text-secondary); }
 
 .savings-text {
-    margin-top: 1rem;
-    font-size: 0.8rem;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    text-align: center;
-    padding: 0.75rem;
-    background: var(--accent-green-soft);
-    border-radius: 8px;
 }
 
 .savings-text strong { color: var(--accent-green); }
 
-/* Scenarios */
-.scenarios-section h3 { margin-bottom: 1rem; }
+/* Scenarios - Compact stats */
+.scenarios-section h3 { margin-bottom: 0.75rem; }
 
 .scenario-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .scenario-card {
-    background: var(--bg-card);
-    border-radius: 10px;
-    padding: 1rem 0.75rem;
+    background: var(--bg-surface);
+    border-radius: 6px;
+    padding: 0.75rem 0.5rem;
     text-align: center;
     border: 1px solid var(--border-subtle);
-    transition: border-color 0.2s ease;
 }
 
-.scenario-card:hover {
-    border-color: var(--border-active);
+.scenario-icon { font-size: 1.5rem; margin-bottom: 0.35rem; }
+.scenario-title { font-weight: 500; font-size: 0.7rem; margin-bottom: 0.15rem; }
+.scenario-desc { font-size: 0.6rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+.scenario-emissions {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-green);
 }
 
-.scenario-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
-.scenario-title { font-weight: 600; font-size: 0.8rem; margin-bottom: 0.25rem; }
-.scenario-desc { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-.scenario-emissions { font-size: 1.25rem; font-weight: 700; color: var(--accent-green); font-variant-numeric: tabular-nums; }
-.scenario-unit { font-size: 0.65rem; color: var(--text-muted); }
-
-/* Equivalents */
-.equivalents-section h3 { margin-bottom: 0.75rem; }
-
-.equivalents-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
+.scenario-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--text-muted);
 }
 
-.equivalent-item { text-align: center; }
-.equivalent-icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
-.equivalent-value { display: block; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
-.equivalent-label { font-size: 0.65rem; color: var(--text-muted); }
+/* Equivalents - Hidden by default (too cute) */
+.equivalents-section { display: none; }
 
-/* Impact display */
+/* Impact meter */
 .impact-comparison {
-    text-align: center;
     padding: 0.75rem;
 }
 
-.impact-comparison p { margin: 0.25rem 0; font-size: 0.8rem; color: var(--text-secondary); }
+.impact-comparison p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0.25rem 0;
+}
 
 .impact-meter {
     height: 4px;
@@ -925,17 +889,16 @@ select option {
 .meter-fill {
     height: 100%;
     border-radius: 2px;
-    transition: width 0.3s ease;
 }
 
 .meter-fill.green { background: var(--accent-green); }
-.meter-fill.yellow { background: var(--accent-yellow); }
-.meter-fill.red { background: var(--accent-red); }
+.meter-fill.yellow { background: var(--accent-warning); }
+.meter-fill.red { background: var(--accent-danger); }
 
-.impact-context { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
+.impact-context { font-size: 0.75rem; color: var(--text-muted); }
 .estimate-equivalent { font-size: 0.75rem; color: var(--text-secondary); }
 
-/* Comparison Section */
+/* Comparison list */
 .comparison-section h3 { margin-bottom: 0.75rem; }
 
 .comparison-list {
@@ -948,30 +911,33 @@ select option {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
-    background: var(--bg-card);
-    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    background: var(--bg-surface);
+    border-radius: 4px;
     border: 1px solid var(--border-subtle);
-    font-size: 0.85rem;
-    transition: border-color 0.2s ease;
-}
-
-.comparison-item:hover {
-    border-color: var(--border-active);
+    font-size: 0.8rem;
 }
 
 .comparison-item.current {
-    background: var(--accent-green-soft);
     border-color: var(--accent-green);
+    background: var(--accent-green-soft);
 }
 
-.comparison-region { font-weight: 500; }
-.comparison-intensity { font-weight: 600; font-variant-numeric: tabular-nums; }
-.comparison-intensity.low { color: var(--accent-green); }
-.comparison-intensity.mid { color: var(--accent-yellow); }
-.comparison-intensity.high { color: var(--accent-red); }
+.comparison-region {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+}
 
-/* Start over button */
+.comparison-intensity {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+}
+
+.comparison-intensity.low { color: var(--accent-green); }
+.comparison-intensity.mid { color: var(--accent-warning); }
+.comparison-intensity.high { color: var(--accent-danger); }
+
+/* Start over */
 #step-results > .btn-text {
     display: block;
     text-align: center;
@@ -981,35 +947,36 @@ select option {
 }
 
 /* ============================================
-   STATS FOOTER - Minimal
+   STATS - Bottom metrics (like 70% / <100ms / 15+ in reference)
    ============================================ */
 .stats {
     background: transparent;
     border: none;
-    padding: 0.75rem 0;
+    padding: 1rem 0;
 }
 
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .stat-item { text-align: center; }
 
 .stat-value {
     display: block;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--accent-green);
 }
 
 .stat-label {
-    font-size: 0.6rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
 }
 
 /* ============================================
@@ -1017,40 +984,35 @@ select option {
    ============================================ */
 footer {
     text-align: center;
-    padding: 2rem 0;
+    padding: 1.5rem 0;
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     border-top: 1px solid var(--border-subtle);
-    margin-top: 1.5rem;
+    margin-top: 1rem;
 }
 
-footer p { margin-bottom: 0.5rem; }
+footer p { margin-bottom: 0.35rem; }
 
 footer a {
     color: var(--text-secondary);
     text-decoration: none;
-    transition: color 0.2s ease;
 }
 
 footer a:hover { color: var(--accent-green); }
 
-footer .cta { margin-top: 1rem; }
+footer .cta { margin-top: 0.75rem; }
 
 footer .cta a {
     display: inline-block;
-    padding: 0.75rem 1.5rem;
+    padding: 0.65rem 1.25rem;
     background: var(--accent-green);
-    border: none;
-    color: #0f1117;
+    color: var(--bg-main);
     font-weight: 600;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border-radius: 6px;
 }
 
 footer .cta a:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-    color: #0f1117;
+    opacity: 0.9;
 }
 
 /* ============================================
@@ -1063,40 +1025,25 @@ footer .cta a:hover {
    ============================================ */
 @media (max-width: 600px) {
     .container { padding: 1rem; }
-
-    header h1 { font-size: 1.5rem; }
-
-    .result-big { font-size: 3.5rem; }
-
-    .location-options {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
+    header h1 { font-size: 1.25rem; }
+    .result-big { font-size: 2.5rem; }
+    .location-options { flex-direction: column; align-items: stretch; }
     .or-divider { text-align: center; }
-
     select { width: 100%; }
-
     .task-selector-grid { grid-template-columns: 1fr; }
-
-    .result-details-grid { grid-template-columns: repeat(2, 1fr); }
-
-    .bar-row .label { min-width: 80px; font-size: 0.65rem; }
-
+    .result-details-grid { grid-template-columns: 1fr; }
+    .bar-row .label { min-width: 80px; font-size: 0.6rem; }
     .scenario-grid { grid-template-columns: repeat(2, 1fr); }
-
-    .equivalents-grid { grid-template-columns: repeat(2, 1fr); }
-
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
-
     .model-card { grid-template-columns: 1fr auto; }
     .model-params { display: none; }
+    .grid-context { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 
 /* ============================================
-   SCROLLBAR - Minimal
+   SCROLLBAR
    ============================================ */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-track { background: var(--bg-main); }
 ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
