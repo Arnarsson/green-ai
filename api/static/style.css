@@ -1,54 +1,65 @@
-/* Green AI - Infra Grade Design */
-/* Warm + consistent surface system */
+/* Green AI - Console Layout with Panel Hierarchy */
+/* Dark (default) + Warm Light mode */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
+/* ============================================
+   TOKENS
+   ============================================ */
 :root {
-    /* Warm dark foundation */
-    --bg: #0E1110;
-    --surface: #131817;
-    --surface-2: #101514;
+    /* Dark mode (default) */
+    --bg: #0B0F0D;
+    --surface: #111714;
+    --surface2: #0E1411;
+    --stroke: rgba(255, 255, 255, 0.08);
+    --stroke2: rgba(255, 255, 255, 0.12);
 
-    /* Unified borders */
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.12);
+    --text: #EAF2ED;
+    --muted: #A3B4AB;
+    --dim: #72847B;
 
-    /* Warm text */
-    --text: #E8EFEA;
-    --text-2: #A7B7AF;
-    --text-3: #7A8A82;
-
-    /* Green = output or action ONLY */
+    /* Green: ONLY for (1) hero metric, (2) primary action, (3) selected state */
     --green: #3FAE82;
-    --green-soft: rgba(63, 174, 130, 0.18);
+    --green2: rgba(63, 174, 130, 0.18);
+    --green-stroke: rgba(63, 174, 130, 0.22);
 
-    /* Status (use sparingly) */
+    /* Status (minimal use) */
     --amber: #FACC15;
     --red: #EF4444;
 
-    /* Warm ambient glow (very subtle) */
-    --warm-glow: rgba(255, 214, 170, 0.04);
+    /* Warmth in shadows/highlights */
+    --warm: rgba(255, 214, 170, 0.06);
 
-    /* Radius - one value everywhere */
-    --r: 12px;
-    --r-sm: 6px;
+    /* Radius */
+    --r: 14px;
+    --r-sm: 8px;
 
-    /* Legacy aliases for compatibility */
-    --bg-main: var(--bg);
-    --bg-surface: var(--surface);
-    --bg-surface-2: var(--surface-2);
-    --border-subtle: var(--border);
-    --border-active: var(--border-strong);
-    --text-primary: var(--text);
-    --text-secondary: var(--text-2);
-    --text-muted: var(--text-3);
-    --accent-green: var(--green);
-    --accent-green-soft: var(--green-soft);
-    --accent-warning: var(--amber);
-    --accent-danger: var(--red);
+    /* Layout */
+    --max-w: 1140px;
+    --gap: 24px;
 }
 
-* {
+/* Light mode */
+[data-theme="light"] {
+    --bg: #F4F7F5;
+    --surface: #FFFFFF;
+    --surface2: #EDF2EF;
+    --stroke: rgba(0, 0, 0, 0.08);
+    --stroke2: rgba(0, 0, 0, 0.12);
+
+    --text: #1A2420;
+    --muted: #5A6B63;
+    --dim: #8A9B93;
+
+    --green: #2D9469;
+    --green2: rgba(45, 148, 105, 0.12);
+    --green-stroke: rgba(45, 148, 105, 0.25);
+
+    --warm: rgba(255, 200, 140, 0.08);
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -56,148 +67,364 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    /* Ambient warmth layer - felt, not seen */
-    background:
-        radial-gradient(800px 400px at 50% 0%, var(--warm-glow), transparent 60%),
-        radial-gradient(900px 500px at 30% 20%, rgba(63, 174, 130, 0.03), transparent 55%),
-        var(--bg);
+    background: var(--bg);
     color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
     font-size: 14px;
-}
-
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 1.5rem;
+    /* Subtle ambient warmth */
+    background-image:
+        radial-gradient(ellipse 1000px 500px at 30% 0%, var(--warm), transparent),
+        radial-gradient(ellipse 800px 400px at 70% 100%, rgba(63, 174, 130, 0.03), transparent);
 }
 
 /* ============================================
-   HEADER - Minimal, authoritative
+   LAYOUT - Console (2-column on desktop)
+   ============================================ */
+.container {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: var(--gap);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.console {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: var(--gap);
+    flex: 1;
+}
+
+.config-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.result-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: var(--gap);
+    height: fit-content;
+}
+
+/* ============================================
+   HEADER
    ============================================ */
 header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 1.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: var(--gap);
+    border-bottom: 1px solid var(--stroke);
+    margin-bottom: var(--gap);
 }
 
 header h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
     letter-spacing: -0.02em;
-    margin-bottom: 0.25rem;
 }
 
-header h1 span {
-    color: var(--accent-green);
+.tagline {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 2px;
 }
 
 .powered-by {
     font-size: 0.7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.25rem;
+    color: var(--dim);
 }
 
 .powered-by a {
-    color: var(--text-muted);
+    color: var(--dim);
     text-decoration: none;
 }
 
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+.powered-by a:hover {
+    color: var(--muted);
 }
 
 /* ============================================
-   PANELS - Unified surface treatment
+   PANELS - 3 Tiers
    ============================================ */
-.card {
-    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+
+/* Base panel (config inputs) */
+.panel {
+    background:
+        radial-gradient(ellipse 600px 300px at 30% 0%, var(--warm), transparent 60%),
+        linear-gradient(180deg, var(--surface), var(--surface2));
+    border: 1px solid var(--stroke);
     border-radius: var(--r);
-    padding: 1.25rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid var(--border);
+    padding: 20px;
 }
 
-.card h2 {
+.panel h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--dim);
+    margin-bottom: 14px;
+}
+
+.panel h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    margin-bottom: 12px;
+}
+
+/* Quiet panel (methodology, comparisons) */
+.panel--quiet {
+    background: var(--surface2);
+    border-color: rgba(255, 255, 255, 0.05);
+    padding: 16px;
+}
+
+[data-theme="light"] .panel--quiet {
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+.panel--quiet summary {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.65rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    cursor: pointer;
+    list-style: none;
 }
 
-.card h3 {
+.panel--quiet summary::-webkit-details-marker {
+    display: none;
+}
+
+.panel--quiet summary::before {
+    content: '+ ';
+}
+
+.panel--quiet details[open] summary::before {
+    content: '− ';
+}
+
+.quiet-content {
+    margin-top: 12px;
+}
+
+.quiet-text {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.quiet-text a {
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Hero panel (THE metric - only one) */
+.panel--hero {
+    border-color: var(--green-stroke);
+    box-shadow:
+        0 0 0 1px rgba(63, 174, 130, 0.08),
+        0 20px 50px rgba(0, 0, 0, 0.4);
+    padding: 24px;
+}
+
+[data-theme="light"] .panel--hero {
+    box-shadow:
+        0 0 0 1px rgba(45, 148, 105, 0.12),
+        0 20px 50px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   HERO METRIC PANEL
+   ============================================ */
+.hero-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.live-label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 500;
-    text-transform: uppercase;
+    font-size: 0.6rem;
+    font-weight: 600;
     letter-spacing: 0.15em;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
+    color: var(--green);
 }
 
-/* Location */
+.hero-metric {
+    margin-bottom: 24px;
+}
+
+.metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--green);
+    display: block;
+}
+
+.metric-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--dim);
+    margin-top: 6px;
+    display: block;
+    letter-spacing: 0.05em;
+}
+
+.hero-context {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--stroke);
+    border-bottom: 1px solid var(--stroke);
+    margin-bottom: 16px;
+}
+
+.context-item {
+    text-align: center;
+}
+
+.context-item .context-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.context-item .context-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+}
+
+.context-item .context-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--dim);
+}
+
+.hero-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.detail-row .detail-label {
+    color: var(--dim);
+}
+
+.detail-row .detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* ============================================
+   LOCATION
+   ============================================ */
 .location-options {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .or-divider {
-    color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--dim);
 }
 
 .location-result {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
+    gap: 10px;
+    margin-top: 12px;
 }
 
 .location-badge {
     font-family: 'JetBrains Mono', monospace;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--r-sm);
-    font-weight: 500;
     font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
+    padding: 6px 12px;
+    border-radius: var(--r-sm);
 }
 
-/* Provider Grid - Terminal style */
+/* ============================================
+   PROVIDER - Segmented controls (not cards)
+   ============================================ */
 .provider-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .provider-card {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 8px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
     border-radius: var(--r-sm);
-    padding: 0.75rem 0.5rem;
-    text-align: center;
     cursor: pointer;
     transition: all 0.15s ease;
+    color: var(--text);
 }
 
 .provider-card:hover {
-    border-color: var(--border-strong);
+    border-color: var(--stroke2);
 }
 
 .provider-card.selected {
-    background: linear-gradient(90deg, var(--green-soft), transparent);
-    border-color: rgba(63, 174, 130, 0.35);
+    background: var(--green2);
+    border-color: var(--green-stroke);
+    color: var(--green);
 }
 
 .provider-card.disabled {
@@ -206,128 +433,46 @@ header h1 span {
 }
 
 .provider-name {
-    font-weight: 500;
-    font-size: 0.8rem;
+    display: block;
 }
 
 .provider-hint {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    margin-top: 0.15rem;
+    display: none;
 }
 
 .provider-more {
-    margin-top: 0.75rem;
-}
-
-/* Buttons */
-.btn-primary {
-    padding: 0.75rem 1.5rem;
-    background: var(--green);
-    color: var(--bg);
-    border: none;
-    border-radius: var(--r-sm);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-}
-
-.btn-primary:hover {
-    opacity: 0.9;
-}
-
-.btn-secondary {
-    padding: 0.65rem 1rem;
-    background: var(--surface-2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.btn-secondary:hover {
-    border-color: var(--border-strong);
-}
-
-.btn-text {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-.btn-text:hover {
-    color: var(--text-secondary);
-}
-
-/* Select */
-select {
-    font-family: 'JetBrains Mono', monospace;
-    padding: 0.65rem 1rem;
-    border-radius: var(--r-sm);
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    color: var(--text);
-    font-size: 0.8rem;
-    min-width: 180px;
-    cursor: pointer;
-    transition: border-color 0.15s ease;
-}
-
-select:focus {
-    outline: none;
-    border-color: var(--green);
-}
-
-select option {
-    background: var(--surface);
+    margin-top: 10px;
 }
 
 /* ============================================
-   MODEL SELECTOR - Spec list (not cards)
+   MODEL LIST - Uniform rows
    ============================================ */
-.step-hint {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-}
-
-.model-grid {
+.model-list {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    margin-bottom: 1rem;
+    gap: 4px;
 }
 
 .model-card {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
     border-radius: var(--r-sm);
-    padding: 0.65rem 0.85rem;
     cursor: pointer;
     transition: all 0.15s ease;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 1rem;
 }
 
 .model-card:hover {
-    border-color: var(--border-strong);
+    border-color: var(--stroke2);
 }
 
 .model-card.selected {
-    background: linear-gradient(90deg, var(--green-soft), transparent);
-    border-color: rgba(63, 174, 130, 0.35);
+    background: var(--green2);
+    border-color: var(--green-stroke);
+    border-left: 2px solid var(--green);
 }
 
 .model-name {
@@ -337,30 +482,27 @@ select option {
 
 .model-params {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--text-muted);
+    font-size: 0.65rem;
+    color: var(--dim);
+    margin-left: 8px;
 }
 
-/* Power as muted meta value - not severity badge */
 .model-power {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: var(--text-3);
-    min-width: 45px;
-    text-align: right;
+    font-size: 0.7rem;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-/* Optional: tiny efficiency dots (use sparingly) */
+/* Tiny efficiency dot */
 .model-power::before {
     content: '';
-    display: inline-block;
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    margin-right: 0.35rem;
-    vertical-align: middle;
-    background: var(--text-3);
+    background: var(--dim);
 }
 
 .model-power.power-low::before { background: var(--green); }
@@ -369,397 +511,114 @@ select option {
 
 .model-note { display: none; }
 
-/* No tier colored left borders - unified treatment */
-
-/* Power info - collapsed, minimal */
-.power-info-box {
-    margin-bottom: 0.75rem;
-}
-
-.power-info-box summary {
-    cursor: pointer;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.power-info-box summary:hover {
-    color: var(--text-secondary);
-}
-
-.info-icon { font-size: 0.8rem; }
-
-.power-info-content {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    background: var(--bg-surface-2);
-    border-radius: 4px;
-}
-
-.power-info-content > p {
-    margin-bottom: 0.75rem;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.power-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 0.75rem;
-    font-size: 0.75rem;
-}
-
-.power-table th,
-.power-table td {
-    padding: 0.5rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.power-table th {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 500;
-    color: var(--text-muted);
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-}
-
-.power-table td {
-    color: var(--text-secondary);
-}
-
-.power-table td:nth-child(2) {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 500;
-}
-
-.power-table tr.tier-small td:nth-child(2) { color: var(--green); }
-.power-table tr.tier-medium td:nth-child(2) { color: var(--amber); }
-.power-table tr.tier-large td:nth-child(2) { color: var(--red); }
-.power-table tr.tier-image td:nth-child(2) { color: #a78bfa; }
-.power-table tr.tier-video td:nth-child(2) { color: #f472b6; }
-
-.power-sources {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border-subtle);
-}
-
-.power-sources strong { color: var(--text-secondary); display: block; margin-bottom: 0.35rem; }
-.power-sources ul { margin-left: 1rem; }
-.power-sources li { margin-bottom: 0.2rem; }
-.power-sources a { color: var(--green); text-decoration: none; }
-
-.power-disclaimer {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    padding: 0.5rem;
-    background: rgba(250, 204, 21, 0.05);
-    border-radius: 4px;
-    margin-top: 0.5rem;
-}
-
-.power-disclaimer strong { color: var(--amber); }
-
-.model-source { margin-top: 0.5rem; }
-
-.source-note {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    padding: 0.5rem;
-    background: var(--bg-surface-2);
-    border-radius: 4px;
-}
-
 /* ============================================
-   LIVE METRIC PANEL - Unified surface treatment
+   TASK BUTTONS - Equal width, crisp
    ============================================ */
-#step-results {
-    background: linear-gradient(180deg, var(--surface), var(--surface-2));
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 0;
-    margin-top: 1rem;
-    margin-bottom: 0.75rem;
-}
-
-#step-results > h2 {
-    padding: 1rem 1.25rem 0;
-    margin-bottom: 0;
-}
-
-/* Task selector */
-.task-selector-section {
-    padding: 0.75rem 1.25rem;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.task-selector-grid {
+.task-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .task-btn {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    padding: 0.75rem 0.5rem;
-    color: var(--text);
-    cursor: pointer;
-    transition: all 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
+    justify-content: center;
+    padding: 14px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: var(--text);
 }
 
 .task-btn:hover {
-    border-color: var(--border-strong);
+    border-color: var(--stroke2);
 }
 
 .task-btn.active {
-    background: linear-gradient(90deg, var(--green-soft), transparent);
-    border-color: rgba(63, 174, 130, 0.35);
+    background: var(--green2);
+    border-color: var(--green-stroke);
 }
 
-.task-btn.loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.7;
-}
+.task-icon { display: none; }
 
-.task-btn.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: 0.5rem;
-    width: 12px;
-    height: 12px;
-    margin-top: -6px;
-    border: 1.5px solid var(--border);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.task-icon { font-size: 1.25rem; }
-.task-label { font-weight: 500; font-size: 0.8rem; }
-.task-sub { font-size: 0.65rem; color: var(--text-muted); }
-
-/* Empty state */
-.result-empty {
-    text-align: center;
-    padding: 2.5rem 1.25rem;
-}
-
-.empty-hint {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-}
-
-/* THE LIVE TRACKING HERO - Matches reference exactly */
-.result-hero {
-    padding: 2rem 1.5rem;
-}
-
-/* Live indicator */
-.result-hero::before {
-    content: '● LIVE TRACKING';
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    color: var(--green);
-    margin-bottom: 0.5rem;
-}
-
-.result-main {
-    margin-bottom: 1.5rem;
-}
-
-/* Label above number */
-.result-main::before {
-    content: 'CO₂ EMISSIONS (g)';
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    margin-bottom: 0.5rem;
-}
-
-.result-big {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 3.5rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: var(--green);
-}
-
-.result-unit {
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-    letter-spacing: 0.05em;
-}
-
-.result-rating {
-    display: none; /* Hidden - the number speaks for itself */
-}
-
-/* Traffic light colors on number */
-.result-hero.traffic-green .result-big { color: var(--green); }
-.result-hero.traffic-yellow .result-big { color: var(--amber); }
-.result-hero.traffic-red .result-big { color: var(--red); }
-
-/* Secondary metrics row (like REQUESTS / AVG/REQUEST in reference) */
-.grid-context {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-subtle);
-    background: var(--bg-surface-2);
-}
-
-.grid-context::before {
-    content: 'GRID INTENSITY';
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    color: var(--text-muted);
-}
-
-.context-label { display: none; }
-
-.context-value {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--green);
+.task-label {
     font-weight: 600;
-    font-size: 1.1rem;
-}
-
-.context-unit {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-}
-
-/* Details grid - Info panels side by side (like PROVIDER / REGION in reference) */
-.result-details-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    padding: 1rem 1.5rem;
-    background: var(--bg-surface-2);
-}
-
-.detail-item {
-    background: var(--surface);
-    padding: 0.75rem 1rem;
-    border-radius: var(--r-sm);
-    border: 1px solid var(--border);
-}
-
-.detail-label {
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
-    color: var(--text-muted);
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    font-weight: 500;
-}
-
-.detail-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 500;
     font-size: 0.85rem;
 }
 
-.detail-value.power-low { color: var(--green); }
-.detail-value.power-medium { color: var(--amber); }
-.detail-value.power-high { color: var(--red); }
+.task-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    margin-top: 2px;
+}
 
 /* ============================================
-   SECONDARY PANELS - Demoted, collapsible
+   BUTTONS & CONTROLS
    ============================================ */
-.detection-explanation,
-.formula-explanation,
-.comparison-visual,
-.scenarios-section,
-.equivalents-section,
-.comparison-section {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-subtle);
-    background: var(--bg-surface-2);
-}
-
-.detection-explanation summary,
-.formula-explanation summary {
-    cursor: pointer;
+.btn-secondary {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.detection-explanation summary:hover,
-.formula-explanation summary:hover {
-    color: var(--text-secondary);
-}
-
-.explanation-content,
-.formula-content {
-    margin-top: 0.75rem;
     font-size: 0.75rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-}
-
-.explanation-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.step-number {
-    background: var(--bg-surface);
-    color: var(--text-muted);
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
+    font-weight: 500;
+    padding: 8px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: var(--text);
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    font-weight: 600;
-    flex-shrink: 0;
+    gap: 6px;
 }
 
-.step-text { flex: 1; }
-.step-text strong { color: var(--text-primary); }
+.btn-secondary:hover {
+    border-color: var(--stroke2);
+}
 
+.btn-text {
+    font-size: 0.7rem;
+    color: var(--dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.btn-text:hover {
+    color: var(--muted);
+}
+
+select {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    cursor: pointer;
+    min-width: 140px;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--green);
+}
+
+/* ============================================
+   FORMULA BOX
+   ============================================ */
 .formula-box {
-    background: var(--bg-surface);
-    border-radius: 4px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: var(--r-sm);
+    padding: 12px;
+    margin-bottom: 12px;
 }
 
 .formula-box code {
@@ -768,179 +627,29 @@ select option {
     color: var(--green);
 }
 
-.formula-breakdown {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    margin-bottom: 0.75rem;
-}
-
-.formula-item {
-    display: flex;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.formula-item strong {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--text-primary);
-    min-width: 100px;
-}
-
-.formula-sources {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-subtle);
-}
-
-.formula-sources strong { color: var(--text-secondary); }
-.formula-sources ul { margin-top: 0.35rem; margin-left: 1rem; }
-.formula-sources li { margin-bottom: 0.2rem; }
-.formula-sources a { color: var(--green); text-decoration: none; }
-
-/* Comparison bars */
-.comparison-visual h3 { margin-bottom: 0.75rem; }
-
-.bar-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.bar-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.bar-row .label {
-    font-family: 'JetBrains Mono', monospace;
-    min-width: 100px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.bar-row .bar {
-    height: 20px;
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 0.5rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    font-weight: 600;
-    color: var(--bg-main);
-    min-width: 40px;
-}
-
-.bar-row .bar.positive { background: var(--green); }
-.bar-row .bar.negative { background: var(--red); }
-.bar-row .bar.neutral { background: var(--amber); }
-.bar-row .bar.current { background: var(--text-2); }
-
-.savings-text {
-    margin-top: 0.75rem;
-    font-size: 0.75rem;
-    color: var(--text-2);
-}
-
-.savings-text strong { color: var(--green); }
-
-/* Scenarios - Compact stats */
-.scenarios-section h3 { margin-bottom: 0.75rem; }
-
-.scenario-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-}
-
-.scenario-card {
-    background: var(--surface);
-    border-radius: var(--r-sm);
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    border: 1px solid var(--border);
-}
-
-.scenario-icon { font-size: 1.5rem; margin-bottom: 0.35rem; }
-.scenario-title { font-weight: 500; font-size: 0.7rem; margin-bottom: 0.15rem; }
-.scenario-desc { font-size: 0.6rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-
-.scenario-emissions {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--green);
-}
-
-.scenario-unit {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
-    color: var(--text-muted);
-}
-
-/* Equivalents - Hidden by default (too cute) */
-.equivalents-section { display: none; }
-
-/* Impact meter */
-.impact-comparison {
-    padding: 0.75rem;
-}
-
-.impact-comparison p {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin: 0.25rem 0;
-}
-
-.impact-meter {
-    height: 4px;
-    background: var(--border-subtle);
-    border-radius: 2px;
-    margin: 0.75rem 0;
-    overflow: hidden;
-}
-
-.meter-fill {
-    height: 100%;
-    border-radius: 2px;
-}
-
-.meter-fill.green { background: var(--green); }
-.meter-fill.yellow { background: var(--amber); }
-.meter-fill.red { background: var(--red); }
-
-.impact-context { font-size: 0.75rem; color: var(--text-muted); }
-.estimate-equivalent { font-size: 0.75rem; color: var(--text-secondary); }
-
-/* Comparison list */
-.comparison-section h3 { margin-bottom: 0.75rem; }
-
+/* ============================================
+   COMPARISONS & SCENARIOS (quiet panels)
+   ============================================ */
 .comparison-list {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 4px;
 }
 
 .comparison-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.6rem 0.85rem;
+    padding: 8px 10px;
     background: var(--surface);
+    border: 1px solid var(--stroke);
     border-radius: var(--r-sm);
-    border: 1px solid var(--border);
     font-size: 0.8rem;
 }
 
 .comparison-item.current {
-    background: linear-gradient(90deg, var(--green-soft), transparent);
-    border-color: rgba(63, 174, 130, 0.35);
+    border-color: var(--green-stroke);
+    background: var(--green2);
 }
 
 .comparison-region {
@@ -951,88 +660,124 @@ select option {
 .comparison-intensity {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
+    color: var(--muted);
 }
 
 .comparison-intensity.low { color: var(--green); }
-.comparison-intensity.mid { color: var(--amber); }
-.comparison-intensity.high { color: var(--red); }
 
-/* Start over */
-#step-results > .btn-text {
-    display: block;
-    text-align: center;
-    padding: 0.75rem;
-    width: 100%;
-    border-top: 1px solid var(--border-subtle);
-}
-
-/* ============================================
-   STATS - Bottom metrics (like 70% / <100ms / 15+ in reference)
-   ============================================ */
-.stats {
-    background: transparent;
-    border: none;
-    padding: 1rem 0;
-}
-
-.stats-grid {
+.scenario-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
 }
 
-.stat-item { text-align: center; }
+.scenario-card {
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: var(--r-sm);
+    padding: 12px;
+    text-align: center;
+}
 
-.stat-value {
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.25rem;
+.scenario-icon { display: none; }
+
+.scenario-title {
     font-weight: 600;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+}
+
+.scenario-desc {
+    font-size: 0.6rem;
+    color: var(--dim);
+    margin-bottom: 8px;
+}
+
+.scenario-emissions {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--green);
 }
 
-.stat-label {
+.scenario-unit {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    color: var(--dim);
 }
 
 /* ============================================
-   FOOTER
+   FOOTER / STATS BAR
    ============================================ */
-footer {
-    text-align: center;
-    padding: 1.5rem 0;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    border-top: 1px solid var(--border-subtle);
-    margin-top: 1rem;
+.stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 0;
+    margin-top: var(--gap);
+    border-top: 1px solid var(--stroke);
 }
 
-footer p { margin-bottom: 0.35rem; }
+.stat {
+    text-align: center;
+}
 
-footer a {
-    color: var(--text-secondary);
+.stat .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--green);
+    display: block;
+}
+
+.stat .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+}
+
+.footer-links {
+    margin-left: auto;
+    display: flex;
+    gap: 16px;
+}
+
+.footer-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--dim);
     text-decoration: none;
 }
 
-footer a:hover { color: var(--green); }
-
-footer .cta { margin-top: 0.75rem; }
-
-footer .cta a {
-    display: inline-block;
-    padding: 0.65rem 1.25rem;
-    background: var(--green);
-    color: var(--bg);
-    font-weight: 600;
-    border-radius: var(--r-sm);
+.footer-links a:hover {
+    color: var(--muted);
 }
 
-footer .cta a:hover {
-    opacity: 0.9;
+/* ============================================
+   THEME TOGGLE
+   ============================================ */
+.theme-toggle {
+    position: fixed;
+    top: var(--gap);
+    right: var(--gap);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    z-index: 100;
+    transition: all 0.15s ease;
+}
+
+.theme-toggle:hover {
+    border-color: var(--stroke2);
 }
 
 /* ============================================
@@ -1041,29 +786,72 @@ footer .cta a:hover {
 .hidden { display: none !important; }
 
 /* ============================================
-   RESPONSIVE
+   RESPONSIVE - Mobile stacks to single column
    ============================================ */
-@media (max-width: 600px) {
-    .container { padding: 1rem; }
-    header h1 { font-size: 1.25rem; }
-    .result-big { font-size: 2.5rem; }
-    .location-options { flex-direction: column; align-items: stretch; }
-    .or-divider { text-align: center; }
-    select { width: 100%; }
-    .task-selector-grid { grid-template-columns: 1fr; }
-    .result-details-grid { grid-template-columns: 1fr; }
-    .bar-row .label { min-width: 80px; font-size: 0.6rem; }
-    .scenario-grid { grid-template-columns: repeat(2, 1fr); }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .model-card { grid-template-columns: 1fr auto; }
-    .model-params { display: none; }
-    .grid-context { grid-template-columns: 1fr; gap: 0.5rem; }
+@media (max-width: 800px) {
+    .console {
+        grid-template-columns: 1fr;
+    }
+
+    .result-col {
+        position: static;
+    }
+
+    .hero-context {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .context-item {
+        display: flex;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .task-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .scenario-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .footer-links {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+        margin-top: 12px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .metric-value {
+        font-size: 2.5rem;
+    }
 }
 
 /* ============================================
-   SCROLLBAR
+   SCROLLBAR (dark mode)
    ============================================ */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-main); }
-::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--stroke2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+/* Legacy compatibility aliases */
+.card { composes: panel; }
+.model-grid { composes: model-list; }
+.task-selector-section { display: none; }
+.task-selector-grid { composes: task-grid; }
+.result-hero, .result-empty, .grid-context, .result-details-grid,
+.detection-explanation, .formula-explanation, .comparison-visual,
+.scenarios-section, .equivalents-section, .estimate-result,
+.comparison-section, .impact-comparison, .impact-meter { display: none; }

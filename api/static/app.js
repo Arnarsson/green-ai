@@ -423,7 +423,7 @@ async function detectLocation() {
         console.error('Geolocation failed:', error);
         alert('Could not detect your location. Please select manually.');
     } finally {
-        btn.innerHTML = '<span class="icon">📍</span> Use my location';
+        btn.innerHTML = '<span class="icon">📍</span> Detect';
         btn.disabled = false;
     }
 }
@@ -596,6 +596,12 @@ async function selectModel(model) {
     document.querySelectorAll('.model-card').forEach(card => {
         card.classList.toggle('selected', card.dataset.modelId === model.id);
     });
+
+    // Show task section if it exists (new layout)
+    const taskSection = document.getElementById('step-task');
+    if (taskSection) {
+        taskSection.classList.remove('hidden');
+    }
 
     // Now show results
     await showResults();
@@ -1211,3 +1217,40 @@ function showComparisonVisual(result) {
         savingsText.innerHTML = `✅ You're using the cleanest available region for this provider!`;
     }
 }
+
+// ==========================================================================
+// THEME TOGGLE
+// ==========================================================================
+
+// Initialize theme from localStorage or system preference
+function initTheme() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+        updateThemeIcon(saved);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        updateThemeIcon('light');
+    }
+}
+
+// Toggle between light and dark
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeIcon(next);
+}
+
+// Update the toggle button icon
+function updateThemeIcon(theme) {
+    const btn = document.querySelector('.theme-toggle');
+    if (btn) {
+        btn.textContent = theme === 'light' ? '☀️' : '🌙';
+    }
+}
+
+// Run on load
+initTheme();
