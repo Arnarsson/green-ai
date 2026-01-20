@@ -747,26 +747,34 @@ function displayResults(result) {
 
     const intensity = result.region.intensity_g_kwh;
 
-    // Main intensity display
+    // Show empty state initially (will be hidden when task is selected)
+    const emptyState = document.getElementById('result-empty');
+    const heroSection = document.getElementById('result-hero-section');
+    if (emptyState) emptyState.classList.remove('hidden');
+    if (heroSection) heroSection.classList.add('hidden');
+
+    // Grid intensity display (secondary metric)
     document.getElementById('result-intensity').textContent = intensity;
 
     // Rating with traffic light background
     const ratingEl = document.getElementById('result-rating');
-    const heroEl = document.querySelector('.result-hero');
-    heroEl.classList.remove('traffic-green', 'traffic-yellow', 'traffic-red');
+    const heroEl = document.getElementById('result-hero-section');
+    if (heroEl) {
+        heroEl.classList.remove('traffic-green', 'traffic-yellow', 'traffic-red');
 
-    if (intensity <= 150) {
-        ratingEl.textContent = 'Excellent - Very Low Carbon';
-        ratingEl.className = 'result-rating rating-excellent';
-        heroEl.classList.add('traffic-green');
-    } else if (intensity <= 300) {
-        ratingEl.textContent = 'Good - Low Carbon';
-        ratingEl.className = 'result-rating rating-good';
-        heroEl.classList.add('traffic-yellow');
-    } else {
-        ratingEl.textContent = 'High Carbon';
-        ratingEl.className = 'result-rating rating-poor';
-        heroEl.classList.add('traffic-red');
+        if (intensity <= 150) {
+            ratingEl.textContent = 'Excellent - Very Low Carbon';
+            ratingEl.className = 'result-rating rating-excellent';
+            heroEl.classList.add('traffic-green');
+        } else if (intensity <= 300) {
+            ratingEl.textContent = 'Good - Low Carbon';
+            ratingEl.className = 'result-rating rating-good';
+            heroEl.classList.add('traffic-yellow');
+        } else {
+            ratingEl.textContent = 'High Carbon';
+            ratingEl.className = 'result-rating rating-poor';
+            heroEl.classList.add('traffic-red');
+        }
     }
 
     // Details
@@ -994,9 +1002,20 @@ async function calculateEmissionsForTask(taskType) {
 
         const data = await response.json();
 
+        // Hide empty state, show hero
+        const emptyState = document.getElementById('result-empty');
+        const heroSection = document.getElementById('result-hero-section');
+        if (emptyState) emptyState.classList.add('hidden');
+        if (heroSection) heroSection.classList.remove('hidden');
+
+        // Update hero with per-request emissions
+        const perRequestEl = document.getElementById('result-per-request');
+        if (perRequestEl) {
+            perRequestEl.textContent = data.emissions_g.toFixed(4);
+        }
+
         // Show result
         document.getElementById('estimate-result').classList.remove('hidden');
-        document.getElementById('estimate-emissions').textContent = data.emissions_g.toFixed(4);
 
         // Show human-readable equivalent
         const equivalentText = getEquivalentText(data.emissions_g);

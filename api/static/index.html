@@ -49,9 +49,9 @@
                 </div>
             </section>
 
-            <!-- Step 2.5: Model Selection (shown after provider) -->
+            <!-- Step 3: Model Selection (shown after provider) -->
             <section class="card hidden" id="step-model">
-                <h2>2b. Which model?</h2>
+                <h2>3. Select model</h2>
                 <p class="step-hint">Different models use different amounts of energy</p>
 
                 <div class="model-grid" id="model-grid">
@@ -78,17 +78,17 @@
                                 </thead>
                                 <tbody>
                                     <tr class="tier-small">
-                                        <td>Small text (Mistral 7B, GPT-4o mini)</td>
+                                        <td>Small (Haiku 4.5, Gemini Flash)</td>
                                         <td>50-150W</td>
                                         <td>Fewer parameters = less computation</td>
                                     </tr>
                                     <tr class="tier-medium">
-                                        <td>Medium text (GPT-3.5, Claude Haiku)</td>
+                                        <td>Medium (GPT-5.2 Instant, Sonnet 4.5)</td>
                                         <td>150-350W</td>
                                         <td>Balanced size and capability</td>
                                     </tr>
                                     <tr class="tier-large">
-                                        <td>Large text (GPT-4, Claude Opus)</td>
+                                        <td>Large (GPT-5.2 Pro, Opus 4.5)</td>
                                         <td>350-600W</td>
                                         <td>Most parameters = most compute</td>
                                     </tr>
@@ -127,16 +127,51 @@
                 </div>
             </section>
 
-            <!-- Step 3: Results -->
+            <!-- Step 4: Results -->
             <section class="card hidden" id="step-results">
                 <h2>Your AI Carbon Footprint</h2>
 
-                <div class="result-hero">
+                <!-- Empty state shown initially -->
+                <div class="result-empty" id="result-empty">
+                    <p class="empty-hint">👆 Select a task above to see your estimate</p>
+                </div>
+
+                <!-- Hero result (shown after task selection) -->
+                <div class="result-hero hidden" id="result-hero-section">
                     <div class="result-main">
-                        <span class="result-big" id="result-intensity">-</span>
-                        <span class="result-unit">g CO₂/kWh</span>
+                        <span class="result-big" id="result-per-request">0.05</span>
+                        <span class="result-unit">g CO₂ per request</span>
                     </div>
-                    <div class="result-rating" id="result-rating">-</div>
+                    <div class="result-rating" id="result-rating">Calculating...</div>
+                </div>
+
+                <!-- Task selector - PRIMARY interaction -->
+                <div class="task-selector-section">
+                    <h3>What are you doing?</h3>
+                    <div class="task-selector-grid">
+                        <button class="task-btn" onclick="selectTask('quick', this)">
+                            <span class="task-icon">⚡</span>
+                            <span class="task-label">Quick Answer</span>
+                            <span class="task-sub">~500ms response</span>
+                        </button>
+                        <button class="task-btn" onclick="selectTask('standard', this)">
+                            <span class="task-icon">📝</span>
+                            <span class="task-label">Writing</span>
+                            <span class="task-sub">~3s response</span>
+                        </button>
+                        <button class="task-btn" onclick="selectTask('complex', this)">
+                            <span class="task-icon">🧠</span>
+                            <span class="task-label">Deep Work</span>
+                            <span class="task-sub">~10s response</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid context (secondary info) -->
+                <div class="grid-context">
+                    <span class="context-label">Grid intensity:</span>
+                    <span class="context-value" id="result-intensity">-</span>
+                    <span class="context-unit">g CO₂/kWh</span>
                 </div>
 
                 <div class="result-details-grid">
@@ -235,41 +270,15 @@
                     </div>
                 </div>
 
-                <!-- Task-based estimate -->
-                <div class="estimate-box">
-                    <h3>Estimate a specific task</h3>
-
-                    <div class="task-selector-grid">
-                        <button class="task-btn" onclick="selectTask('quick', this)">
-                            <span class="task-icon">⚡</span>
-                            <span class="task-label">Quick Answer</span>
-                            <span class="task-sub">Fact check, definition</span>
-                        </button>
-                        <button class="task-btn" onclick="selectTask('standard', this)">
-                            <span class="task-icon">📝</span>
-                            <span class="task-label">Short Writing</span>
-                            <span class="task-sub">Email, summary</span>
-                        </button>
-                        <button class="task-btn" onclick="selectTask('complex', this)">
-                            <span class="task-icon">🧠</span>
-                            <span class="task-label">Deep Dive</span>
-                            <span class="task-sub">Coding, essay, reasoning</span>
-                        </button>
-                    </div>
-
-                    <input type="hidden" id="latency-input" value="2000">
-
-                    <div class="estimate-result hidden" id="estimate-result">
-                        <div class="impact-hero">
-                            <span class="impact-value" id="estimate-emissions">-</span>
-                            <span class="impact-unit">g CO₂</span>
-                        </div>
+                <!-- Task estimate result (shown after task selection) -->
+                <input type="hidden" id="latency-input" value="2000">
+                <div class="estimate-result hidden" id="estimate-result">
+                    <div class="impact-comparison">
                         <p class="impact-equivalent" id="estimate-equivalent"></p>
-
-                        <div class="impact-meter">
-                            <div class="meter-fill" id="impact-fill"></div>
-                        </div>
-                        <p class="impact-context">That's like keeping a LED bulb on for <span id="bulb-time">-</span> minutes.</p>
+                        <p class="impact-context">💡 Like keeping a LED bulb on for <span id="bulb-time">-</span> minutes</p>
+                    </div>
+                    <div class="impact-meter">
+                        <div class="meter-fill" id="impact-fill"></div>
                     </div>
                 </div>
 
