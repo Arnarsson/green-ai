@@ -68,45 +68,43 @@ const USAGE_PROFILES = {
     deep: { powerW: 400, durationMs: 10000, name: 'Deep thinking' }
 };
 
-// Models per provider with power multipliers (relative to base)
+// Models per provider with power multipliers (relative to base) - Updated Jan 2026
 const MODELS = {
     openai: [
-        { id: 'gpt-4o', name: 'GPT-4o', size: 'flagship', powerMultiplier: 1.0 },
-        { id: 'gpt-4o-mini', name: 'GPT-4o mini', size: 'efficient', powerMultiplier: 0.3 },
-        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', size: '128K context', powerMultiplier: 1.2 },
-        { id: 'o1', name: 'o1', size: 'reasoning', powerMultiplier: 2.5 },
-        { id: 'o1-mini', name: 'o1-mini', size: 'fast reasoning', powerMultiplier: 1.0 },
-        { id: 'o3-mini', name: 'o3-mini', size: 'latest reasoning', powerMultiplier: 1.5 }
+        { id: 'gpt-4.1', name: 'GPT-4.1', size: 'flagship', powerMultiplier: 1.0 },
+        { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini', size: 'efficient', powerMultiplier: 0.3 },
+        { id: 'gpt-4.1-nano', name: 'GPT-4.1 nano', size: 'fastest', powerMultiplier: 0.1 },
+        { id: 'o3', name: 'o3', size: 'reasoning', powerMultiplier: 3.0 },
+        { id: 'o4-mini', name: 'o4-mini', size: 'fast reasoning', powerMultiplier: 1.2 },
+        { id: 'o1-pro', name: 'o1 Pro', size: 'high compute', powerMultiplier: 4.0 }
     ],
     anthropic: [
-        { id: 'opus-4.5', name: 'Claude Opus 4.5', size: 'most capable', powerMultiplier: 2.0 },
+        { id: 'opus-4', name: 'Claude Opus 4', size: 'most capable', powerMultiplier: 2.5 },
         { id: 'sonnet-4', name: 'Claude Sonnet 4', size: 'balanced', powerMultiplier: 1.0 },
-        { id: 'haiku-3.5', name: 'Claude Haiku 3.5', size: 'fastest', powerMultiplier: 0.25 },
-        { id: 'sonnet-3.5', name: 'Claude 3.5 Sonnet', size: 'previous gen', powerMultiplier: 0.8 },
-        { id: 'opus-3', name: 'Claude 3 Opus', size: 'previous flagship', powerMultiplier: 1.5 }
+        { id: 'haiku-3.5', name: 'Claude Haiku 3.5', size: 'fastest', powerMultiplier: 0.25 }
     ],
     google: [
-        { id: 'gemini-2-flash', name: 'Gemini 2.0 Flash', size: 'multimodal', powerMultiplier: 0.8 },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', size: '2M context', powerMultiplier: 1.2 },
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', size: 'fast', powerMultiplier: 0.4 },
-        { id: 'gemini-ultra', name: 'Gemini Ultra', size: 'largest', powerMultiplier: 2.0 }
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', size: 'flagship', powerMultiplier: 1.5 },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', size: 'fast', powerMultiplier: 0.5 },
+        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', size: 'multimodal', powerMultiplier: 0.4 },
+        { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', size: 'cheapest', powerMultiplier: 0.15 }
     ],
     cohere: [
+        { id: 'command-r7b', name: 'Command R7B', size: 'on-device', powerMultiplier: 0.1 },
         { id: 'command-r-plus', name: 'Command R+', size: '128K RAG', powerMultiplier: 1.2 },
-        { id: 'command-r', name: 'Command R', size: 'balanced', powerMultiplier: 0.8 },
-        { id: 'command-light', name: 'Command Light', size: 'efficient', powerMultiplier: 0.3 }
+        { id: 'command-r', name: 'Command R', size: 'balanced', powerMultiplier: 0.8 }
     ],
     mistral: [
-        { id: 'mistral-large', name: 'Mistral Large', size: 'flagship', powerMultiplier: 1.2 },
-        { id: 'mistral-medium', name: 'Mistral Medium', size: 'balanced', powerMultiplier: 0.7 },
+        { id: 'mistral-large-2', name: 'Mistral Large 2', size: '128K flagship', powerMultiplier: 1.3 },
         { id: 'mistral-small', name: 'Mistral Small', size: 'efficient', powerMultiplier: 0.3 },
-        { id: 'codestral', name: 'Codestral', size: 'code specialist', powerMultiplier: 0.8 }
+        { id: 'codestral', name: 'Codestral', size: 'code specialist', powerMultiplier: 0.8 },
+        { id: 'pixtral-large', name: 'Pixtral Large', size: 'vision', powerMultiplier: 1.4 }
     ],
     llama: [
+        { id: 'llama-4-maverick', name: 'Llama 4 Maverick', size: '400B MoE', powerMultiplier: 2.0 },
+        { id: 'llama-4-scout', name: 'Llama 4 Scout', size: '109B MoE', powerMultiplier: 0.8 },
         { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', size: '70B params', powerMultiplier: 1.0 },
-        { id: 'llama-3.1-405b', name: 'Llama 3.1 405B', size: '405B params', powerMultiplier: 3.0 },
-        { id: 'llama-3.1-70b', name: 'Llama 3.1 70B', size: '70B params', powerMultiplier: 1.0 },
-        { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', size: '8B params', powerMultiplier: 0.15 }
+        { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', size: 'on-device', powerMultiplier: 0.05 }
     ]
 };
 
@@ -511,7 +509,7 @@ function generatePlotTwist(userLocation, datacenter, provider) {
     const dcContinent = getContinent(datacenter.country);
 
     if (userContinent !== dcContinent) {
-        const distance = estimateDistance(userLocation.code, datacenter.country);
+        const distance = estimateDistance(userLocation.code, datacenter);
         return PLOT_TWISTS.far_datacenter
             .replace('{user_country}', userLocation.name)
             .replace('{provider}', provider.name)
@@ -540,26 +538,57 @@ function generatePlotTwist(userLocation, datacenter, provider) {
 function getContinent(countryCode) {
     const continents = {
         US: 'NA', CA: 'NA', MX: 'NA',
-        GB: 'EU', DE: 'EU', FR: 'EU', NL: 'EU', SE: 'EU', NO: 'EU', DK: 'EU', FI: 'EU', IE: 'EU', ES: 'EU', IT: 'EU', PL: 'EU',
-        JP: 'AS', KR: 'AS', SG: 'AS', IN: 'AS', CN: 'AS',
-        AU: 'OC',
-        BR: 'SA'
+        GB: 'EU', DE: 'EU', FR: 'EU', NL: 'EU', SE: 'EU', NO: 'EU', DK: 'EU', FI: 'EU', IE: 'EU', ES: 'EU', IT: 'EU', PL: 'EU', CH: 'EU', BE: 'EU', AT: 'EU',
+        JP: 'AS', KR: 'AS', SG: 'AS', IN: 'AS', CN: 'AS', TW: 'AS',
+        AU: 'OC', NZ: 'OC',
+        BR: 'SA', AR: 'SA', CL: 'SA'
     };
     return continents[countryCode] || 'unknown';
 }
 
-function estimateDistance(from, to) {
-    // Rough estimates in km
+// Calculate distance using Haversine formula (verified: https://en.wikipedia.org/wiki/Haversine_formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return Math.round(R * c);
+}
+
+// User country approximate coordinates for distance calculation
+const COUNTRY_COORDS = {
+    US: [39.8, -98.6], CA: [56.1, -106.3], MX: [23.6, -102.5],
+    GB: [55.4, -3.4], DE: [51.2, 10.5], FR: [46.2, 2.2], NL: [52.1, 5.3],
+    SE: [60.1, 18.6], NO: [60.5, 8.5], DK: [56.3, 9.5], FI: [61.9, 25.7],
+    IE: [53.4, -8.2], ES: [40.5, -3.7], IT: [41.9, 12.6], PL: [51.9, 19.1],
+    JP: [36.2, 138.3], KR: [35.9, 127.8], SG: [1.4, 103.8], IN: [20.6, 79.0],
+    AU: [-25.3, 133.8], BR: [-14.2, -51.9]
+};
+
+function estimateDistance(userCountry, datacenter) {
+    // If datacenter has coordinates, use Haversine formula
+    if (datacenter.coords && COUNTRY_COORDS[userCountry]) {
+        const [userLat, userLon] = COUNTRY_COORDS[userCountry];
+        const [dcLat, dcLon] = datacenter.coords;
+        return calculateDistance(userLat, userLon, dcLat, dcLon);
+    }
+
+    // Fallback to continent estimates
     const distances = {
-        'EU-US': 7000,
-        'EU-AS': 8000,
-        'US-AS': 10000,
-        'EU-AU': 16000,
-        'US-AU': 14000
+        'EU-NA': 7000, 'NA-EU': 7000,
+        'EU-AS': 8000, 'AS-EU': 8000,
+        'NA-AS': 10000, 'AS-NA': 10000,
+        'EU-OC': 16000, 'OC-EU': 16000,
+        'NA-OC': 12000, 'OC-NA': 12000,
+        'EU-SA': 9000, 'SA-EU': 9000,
+        'NA-SA': 7000, 'SA-NA': 7000
     };
-    const fromC = getContinent(from);
-    const toC = getContinent(to);
-    return distances[`${fromC}-${toC}`] || distances[`${toC}-${fromC}`] || 5000;
+    const fromC = getContinent(userCountry);
+    const toC = getContinent(datacenter.country);
+    return distances[`${fromC}-${toC}`] || 5000;
 }
 
 function updateWhatIf(result) {
