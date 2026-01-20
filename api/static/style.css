@@ -1,28 +1,51 @@
 /* Green AI - Infra Grade Design */
-/* Style transferred from landing hero */
+/* Warm + consistent surface system */
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-    /* Exact tokens from reference */
-    --bg-main: #0B0F0E;
-    --bg-surface: #111716;
-    --bg-surface-2: #0E1312;
+    /* Warm dark foundation */
+    --bg: #0E1110;
+    --surface: #131817;
+    --surface-2: #101514;
 
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-active: rgba(255, 255, 255, 0.1);
+    /* Unified borders */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.12);
 
-    --text-primary: #E6F1ED;
-    --text-secondary: #9FB6AE;
-    --text-muted: #6C837C;
+    /* Warm text */
+    --text: #E8EFEA;
+    --text-2: #A7B7AF;
+    --text-3: #7A8A82;
 
     /* Green = output or action ONLY */
-    --accent-green: #2FB67E;
-    --accent-green-soft: rgba(47, 182, 126, 0.15);
-    --accent-green-glow: rgba(47, 182, 126, 0.3);
+    --green: #3FAE82;
+    --green-soft: rgba(63, 174, 130, 0.18);
 
-    --accent-warning: #FACC15;
-    --accent-danger: #EF4444;
+    /* Status (use sparingly) */
+    --amber: #FACC15;
+    --red: #EF4444;
+
+    /* Warm ambient glow (very subtle) */
+    --warm-glow: rgba(255, 214, 170, 0.04);
+
+    /* Radius - one value everywhere */
+    --r: 12px;
+    --r-sm: 6px;
+
+    /* Legacy aliases for compatibility */
+    --bg-main: var(--bg);
+    --bg-surface: var(--surface);
+    --bg-surface-2: var(--surface-2);
+    --border-subtle: var(--border);
+    --border-active: var(--border-strong);
+    --text-primary: var(--text);
+    --text-secondary: var(--text-2);
+    --text-muted: var(--text-3);
+    --accent-green: var(--green);
+    --accent-green-soft: var(--green-soft);
+    --accent-warning: var(--amber);
+    --accent-danger: var(--red);
 }
 
 * {
@@ -33,8 +56,12 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-main);
-    color: var(--text-primary);
+    /* Ambient warmth layer - felt, not seen */
+    background:
+        radial-gradient(800px 400px at 50% 0%, var(--warm-glow), transparent 60%),
+        radial-gradient(900px 500px at 30% 20%, rgba(63, 174, 130, 0.03), transparent 55%),
+        var(--bg);
+    color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
     font-size: 14px;
@@ -86,14 +113,14 @@ header h1 span {
 }
 
 /* ============================================
-   CONFIGURATION PANEL - Inputs (flat, compact, boring)
+   PANELS - Unified surface treatment
    ============================================ */
 .card {
-    background: var(--bg-surface);
-    border-radius: 8px;
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border-radius: var(--r);
     padding: 1.25rem;
     margin-bottom: 0.75rem;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--border);
 }
 
 .card h2 {
@@ -138,11 +165,11 @@ header h1 span {
 
 .location-badge {
     font-family: 'JetBrains Mono', monospace;
-    background: var(--bg-surface-2);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-primary);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
     padding: 0.5rem 0.75rem;
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     font-weight: 500;
     font-size: 0.8rem;
 }
@@ -155,22 +182,22 @@ header h1 span {
 }
 
 .provider-card {
-    background: var(--bg-surface-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
     padding: 0.75rem 0.5rem;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.15s ease;
+    transition: all 0.15s ease;
 }
 
 .provider-card:hover {
-    border-color: var(--border-active);
+    border-color: var(--border-strong);
 }
 
 .provider-card.selected {
-    border-color: var(--accent-green);
-    background: var(--accent-green-soft);
+    background: linear-gradient(90deg, var(--green-soft), transparent);
+    border-color: rgba(63, 174, 130, 0.35);
 }
 
 .provider-card.disabled {
@@ -196,10 +223,10 @@ header h1 span {
 /* Buttons */
 .btn-primary {
     padding: 0.75rem 1.5rem;
-    background: var(--accent-green);
-    color: var(--bg-main);
+    background: var(--green);
+    color: var(--bg);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
@@ -212,21 +239,21 @@ header h1 span {
 
 .btn-secondary {
     padding: 0.65rem 1rem;
-    background: var(--bg-surface-2);
-    color: var(--text-primary);
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: border-color 0.15s ease;
+    transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
 }
 
 .btn-secondary:hover {
-    border-color: var(--border-active);
+    border-color: var(--border-strong);
 }
 
 .btn-text {
@@ -246,22 +273,23 @@ header h1 span {
 select {
     font-family: 'JetBrains Mono', monospace;
     padding: 0.65rem 1rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
-    background: var(--bg-surface-2);
-    color: var(--text-primary);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
     font-size: 0.8rem;
     min-width: 180px;
     cursor: pointer;
+    transition: border-color 0.15s ease;
 }
 
 select:focus {
     outline: none;
-    border-color: var(--accent-green);
+    border-color: var(--green);
 }
 
 select option {
-    background: var(--bg-surface);
+    background: var(--surface);
 }
 
 /* ============================================
@@ -281,12 +309,12 @@ select option {
 }
 
 .model-card {
-    background: var(--bg-surface-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
     padding: 0.65rem 0.85rem;
     cursor: pointer;
-    transition: border-color 0.15s ease;
+    transition: all 0.15s ease;
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
@@ -294,12 +322,12 @@ select option {
 }
 
 .model-card:hover {
-    border-color: var(--border-active);
+    border-color: var(--border-strong);
 }
 
 .model-card.selected {
-    border-color: var(--accent-green);
-    background: var(--accent-green-soft);
+    background: linear-gradient(90deg, var(--green-soft), transparent);
+    border-color: rgba(63, 174, 130, 0.35);
 }
 
 .model-name {
@@ -313,39 +341,35 @@ select option {
     color: var(--text-muted);
 }
 
+/* Power as muted meta value - not severity badge */
 .model-power {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 500;
-    padding: 0.2rem 0.5rem;
-    border-radius: 3px;
+    color: var(--text-3);
     min-width: 45px;
-    text-align: center;
+    text-align: right;
 }
 
-.model-power.power-low {
-    background: var(--accent-green-soft);
-    color: var(--accent-green);
+/* Optional: tiny efficiency dots (use sparingly) */
+.model-power::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+    background: var(--text-3);
 }
 
-.model-power.power-medium {
-    background: rgba(250, 204, 21, 0.15);
-    color: var(--accent-warning);
-}
-
-.model-power.power-high {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--accent-danger);
-}
+.model-power.power-low::before { background: var(--green); }
+.model-power.power-medium::before { background: var(--amber); }
+.model-power.power-high::before { background: var(--red); }
 
 .model-note { display: none; }
 
-/* Tier indicators */
-.model-card.tier-small { border-left: 2px solid var(--accent-green); }
-.model-card.tier-medium { border-left: 2px solid var(--accent-warning); }
-.model-card.tier-large { border-left: 2px solid var(--accent-danger); }
-.model-card.tier-image { border-left: 2px solid #a78bfa; }
-.model-card.tier-video { border-left: 2px solid #f472b6; }
+/* No tier colored left borders - unified treatment */
 
 /* Power info - collapsed, minimal */
 .power-info-box {
@@ -410,9 +434,9 @@ select option {
     font-weight: 500;
 }
 
-.power-table tr.tier-small td:nth-child(2) { color: var(--accent-green); }
-.power-table tr.tier-medium td:nth-child(2) { color: var(--accent-warning); }
-.power-table tr.tier-large td:nth-child(2) { color: var(--accent-danger); }
+.power-table tr.tier-small td:nth-child(2) { color: var(--green); }
+.power-table tr.tier-medium td:nth-child(2) { color: var(--amber); }
+.power-table tr.tier-large td:nth-child(2) { color: var(--red); }
 .power-table tr.tier-image td:nth-child(2) { color: #a78bfa; }
 .power-table tr.tier-video td:nth-child(2) { color: #f472b6; }
 
@@ -426,7 +450,7 @@ select option {
 .power-sources strong { color: var(--text-secondary); display: block; margin-bottom: 0.35rem; }
 .power-sources ul { margin-left: 1rem; }
 .power-sources li { margin-bottom: 0.2rem; }
-.power-sources a { color: var(--accent-green); text-decoration: none; }
+.power-sources a { color: var(--green); text-decoration: none; }
 
 .power-disclaimer {
     font-size: 0.7rem;
@@ -437,7 +461,7 @@ select option {
     margin-top: 0.5rem;
 }
 
-.power-disclaimer strong { color: var(--accent-warning); }
+.power-disclaimer strong { color: var(--amber); }
 
 .model-source { margin-top: 0.5rem; }
 
@@ -450,12 +474,12 @@ select option {
 }
 
 /* ============================================
-   LIVE METRIC PANEL - The Hero (matches reference)
+   LIVE METRIC PANEL - Unified surface treatment
    ============================================ */
 #step-results {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border);
+    border-radius: var(--r);
     padding: 0;
     margin-top: 1rem;
     margin-bottom: 0.75rem;
@@ -479,13 +503,13 @@ select option {
 }
 
 .task-btn {
-    background: var(--bg-surface-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
     padding: 0.75rem 0.5rem;
-    color: var(--text-primary);
+    color: var(--text);
     cursor: pointer;
-    transition: border-color 0.15s ease;
+    transition: all 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -493,12 +517,12 @@ select option {
 }
 
 .task-btn:hover {
-    border-color: var(--border-active);
+    border-color: var(--border-strong);
 }
 
 .task-btn.active {
-    border-color: var(--accent-green);
-    background: var(--accent-green-soft);
+    background: linear-gradient(90deg, var(--green-soft), transparent);
+    border-color: rgba(63, 174, 130, 0.35);
 }
 
 .task-btn.loading {
@@ -515,8 +539,8 @@ select option {
     width: 12px;
     height: 12px;
     margin-top: -6px;
-    border: 1.5px solid var(--border-subtle);
-    border-top-color: var(--accent-green);
+    border: 1.5px solid var(--border);
+    border-top-color: var(--green);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -551,12 +575,8 @@ select option {
     font-size: 0.65rem;
     font-weight: 500;
     letter-spacing: 0.15em;
-    color: var(--text-muted);
+    color: var(--green);
     margin-bottom: 0.5rem;
-}
-
-.result-hero::before {
-    color: var(--accent-green);
 }
 
 .result-main {
@@ -581,7 +601,7 @@ select option {
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.02em;
-    color: var(--accent-green);
+    color: var(--green);
 }
 
 .result-unit {
@@ -598,9 +618,9 @@ select option {
 }
 
 /* Traffic light colors on number */
-.result-hero.traffic-green .result-big { color: var(--accent-green); }
-.result-hero.traffic-yellow .result-big { color: var(--accent-warning); }
-.result-hero.traffic-red .result-big { color: var(--accent-danger); }
+.result-hero.traffic-green .result-big { color: var(--green); }
+.result-hero.traffic-yellow .result-big { color: var(--amber); }
+.result-hero.traffic-red .result-big { color: var(--red); }
 
 /* Secondary metrics row (like REQUESTS / AVG/REQUEST in reference) */
 .grid-context {
@@ -625,7 +645,7 @@ select option {
 
 .context-value {
     font-family: 'JetBrains Mono', monospace;
-    color: var(--accent-green);
+    color: var(--green);
     font-weight: 600;
     font-size: 1.1rem;
 }
@@ -646,10 +666,10 @@ select option {
 }
 
 .detail-item {
-    background: var(--bg-surface);
+    background: var(--surface);
     padding: 0.75rem 1rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
 }
 
 .detail-label {
@@ -669,9 +689,9 @@ select option {
     font-size: 0.85rem;
 }
 
-.detail-value.power-low { color: var(--accent-green); }
-.detail-value.power-medium { color: var(--accent-warning); }
-.detail-value.power-high { color: var(--accent-danger); }
+.detail-value.power-low { color: var(--green); }
+.detail-value.power-medium { color: var(--amber); }
+.detail-value.power-high { color: var(--red); }
 
 /* ============================================
    SECONDARY PANELS - Demoted, collapsible
@@ -745,7 +765,7 @@ select option {
 .formula-box code {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
-    color: var(--accent-green);
+    color: var(--green);
 }
 
 .formula-breakdown {
@@ -778,7 +798,7 @@ select option {
 .formula-sources strong { color: var(--text-secondary); }
 .formula-sources ul { margin-top: 0.35rem; margin-left: 1rem; }
 .formula-sources li { margin-bottom: 0.2rem; }
-.formula-sources a { color: var(--accent-green); text-decoration: none; }
+.formula-sources a { color: var(--green); text-decoration: none; }
 
 /* Comparison bars */
 .comparison-visual h3 { margin-bottom: 0.75rem; }
@@ -817,18 +837,18 @@ select option {
     min-width: 40px;
 }
 
-.bar-row .bar.positive { background: var(--accent-green); }
-.bar-row .bar.negative { background: var(--accent-danger); }
-.bar-row .bar.neutral { background: var(--accent-warning); }
-.bar-row .bar.current { background: var(--text-secondary); }
+.bar-row .bar.positive { background: var(--green); }
+.bar-row .bar.negative { background: var(--red); }
+.bar-row .bar.neutral { background: var(--amber); }
+.bar-row .bar.current { background: var(--text-2); }
 
 .savings-text {
     margin-top: 0.75rem;
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--text-2);
 }
 
-.savings-text strong { color: var(--accent-green); }
+.savings-text strong { color: var(--green); }
 
 /* Scenarios - Compact stats */
 .scenarios-section h3 { margin-bottom: 0.75rem; }
@@ -840,11 +860,11 @@ select option {
 }
 
 .scenario-card {
-    background: var(--bg-surface);
-    border-radius: 6px;
+    background: var(--surface);
+    border-radius: var(--r-sm);
     padding: 0.75rem 0.5rem;
     text-align: center;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--border);
 }
 
 .scenario-icon { font-size: 1.5rem; margin-bottom: 0.35rem; }
@@ -855,7 +875,7 @@ select option {
     font-family: 'JetBrains Mono', monospace;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--accent-green);
+    color: var(--green);
 }
 
 .scenario-unit {
@@ -891,9 +911,9 @@ select option {
     border-radius: 2px;
 }
 
-.meter-fill.green { background: var(--accent-green); }
-.meter-fill.yellow { background: var(--accent-warning); }
-.meter-fill.red { background: var(--accent-danger); }
+.meter-fill.green { background: var(--green); }
+.meter-fill.yellow { background: var(--amber); }
+.meter-fill.red { background: var(--red); }
 
 .impact-context { font-size: 0.75rem; color: var(--text-muted); }
 .estimate-equivalent { font-size: 0.75rem; color: var(--text-secondary); }
@@ -912,15 +932,15 @@ select option {
     justify-content: space-between;
     align-items: center;
     padding: 0.6rem 0.85rem;
-    background: var(--bg-surface);
-    border-radius: 4px;
-    border: 1px solid var(--border-subtle);
+    background: var(--surface);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
     font-size: 0.8rem;
 }
 
 .comparison-item.current {
-    border-color: var(--accent-green);
-    background: var(--accent-green-soft);
+    background: linear-gradient(90deg, var(--green-soft), transparent);
+    border-color: rgba(63, 174, 130, 0.35);
 }
 
 .comparison-region {
@@ -933,9 +953,9 @@ select option {
     font-weight: 600;
 }
 
-.comparison-intensity.low { color: var(--accent-green); }
-.comparison-intensity.mid { color: var(--accent-warning); }
-.comparison-intensity.high { color: var(--accent-danger); }
+.comparison-intensity.low { color: var(--green); }
+.comparison-intensity.mid { color: var(--amber); }
+.comparison-intensity.high { color: var(--red); }
 
 /* Start over */
 #step-results > .btn-text {
@@ -968,7 +988,7 @@ select option {
     font-family: 'JetBrains Mono', monospace;
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--accent-green);
+    color: var(--green);
 }
 
 .stat-label {
@@ -998,17 +1018,17 @@ footer a {
     text-decoration: none;
 }
 
-footer a:hover { color: var(--accent-green); }
+footer a:hover { color: var(--green); }
 
 footer .cta { margin-top: 0.75rem; }
 
 footer .cta a {
     display: inline-block;
     padding: 0.65rem 1.25rem;
-    background: var(--accent-green);
-    color: var(--bg-main);
+    background: var(--green);
+    color: var(--bg);
     font-weight: 600;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
 }
 
 footer .cta a:hover {
