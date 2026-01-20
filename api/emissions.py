@@ -11,10 +11,7 @@ from datetime import datetime, timezone
 
 
 def calculate_emissions(
-    latency_ms: int,
-    power_watts: float,
-    grid_intensity_g_kwh: float,
-    pue: float = 1.2
+    latency_ms: int, power_watts: float, grid_intensity_g_kwh: float, pue: float = 1.2
 ) -> dict:
     """
     Calculate CO₂ emissions for an AI inference.
@@ -49,7 +46,7 @@ def calculate_emissions(
         "grid_intensity_g_kwh": grid_intensity_g_kwh,
         "power_watts": power_watts,
         "latency_ms": latency_ms,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -70,5 +67,5 @@ def emissions_to_comparison(emissions_g: float) -> dict:
         "tv_streaming_seconds": round(tv_seconds, 1),
         "car_driving_meters": round(driving_meters, 1),
         "tree_absorption_hours": round(tree_hours, 2),
-        "smartphone_charges": round(emissions_g / 8, 2)  # ~8g per full charge
+        "smartphone_charges": round(emissions_g / 8, 2),  # ~8g per full charge
     }

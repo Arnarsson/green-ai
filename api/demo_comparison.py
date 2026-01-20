@@ -6,9 +6,9 @@ Demonstrates how CO₂ emissions vary across different cloud regions
 for the same AI inference task.
 """
 
+from typing import Dict
+
 import requests
-import json
-from typing import Dict, List
 
 BASE_URL = "http://localhost:8000"
 
@@ -22,8 +22,8 @@ def estimate_emissions(provider: str, region: str, latency_ms: int = 2500) -> Di
             "provider": provider,
             "region": region,
             "power_watts": 400,
-            "pue": 1.2
-        }
+            "pue": 1.2,
+        },
     )
     return response.json()
 
@@ -49,13 +49,15 @@ def main():
 
     for provider, region, description in test_cases:
         result = estimate_emissions(provider, region)
-        results.append({
-            "description": description,
-            "provider": provider,
-            "region": region,
-            "emissions_g": result["emissions_g"],
-            "grid_intensity": result["grid_intensity_g_kwh"],
-        })
+        results.append(
+            {
+                "description": description,
+                "provider": provider,
+                "region": region,
+                "emissions_g": result["emissions_g"],
+                "grid_intensity": result["grid_intensity_g_kwh"],
+            }
+        )
 
     # Sort by emissions (lowest to highest)
     results.sort(key=lambda x: x["emissions_g"])
@@ -95,7 +97,9 @@ def main():
         print(f"{result['description']}:")
         print(f"  1M requests/day: {daily_kg:.2f}kg CO₂/day ({annual_tons:.2f} tons/year)")
 
-    diff_tons = ((results[-1]["emissions_g"] - results[0]["emissions_g"]) * requests_per_day * 365) / 1_000_000
+    diff_tons = (
+        (results[-1]["emissions_g"] - results[0]["emissions_g"]) * requests_per_day * 365
+    ) / 1_000_000
     print()
     print(f"Annual savings: {diff_tons:.2f} tons CO₂ by choosing greenest region")
     print(f"Equivalent to: {diff_tons * 5:.0f}m driving or {diff_tons * 125:.0f} tree-years")
