@@ -627,6 +627,72 @@ select:focus {
     color: var(--green);
 }
 
+.formula-breakdown {
+    margin-top: 10px;
+}
+
+.formula-breakdown p {
+    margin-bottom: 4px;
+}
+
+/* Power tier table */
+.power-table {
+    width: 100%;
+    font-size: 0.75rem;
+    border-collapse: collapse;
+}
+
+.power-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--stroke);
+}
+
+.power-table td:first-child {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.power-table td:nth-child(2) {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+}
+
+.power-table td:nth-child(3) {
+    color: var(--dim);
+    font-size: 0.7rem;
+}
+
+/* Explanation steps */
+.explanation-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+}
+
+.step-number {
+    background: var(--surface);
+    color: var(--dim);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.step-text {
+    color: var(--muted);
+}
+
+.step-text strong {
+    color: var(--text);
+}
+
 /* ============================================
    COMPARISONS & SCENARIOS (quiet panels)
    ============================================ */

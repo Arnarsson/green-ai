@@ -161,6 +161,49 @@
                         <!-- Populated by JS -->
                     </div>
                 </section>
+
+                <!-- Detection explanation (quiet) -->
+                <section class="panel panel--quiet" id="detection-section">
+                    <details>
+                        <summary>Why this datacenter?</summary>
+                        <div class="quiet-content" id="explanation-content">
+                            <!-- Populated by JS -->
+                        </div>
+                    </details>
+                </section>
+
+                <!-- Formula explanation (quiet) -->
+                <section class="panel panel--quiet">
+                    <details>
+                        <summary>How we calculate</summary>
+                        <div class="quiet-content">
+                            <div class="formula-box">
+                                <code>CO₂ (g) = Energy (kWh) × PUE × Grid Intensity (g/kWh)</code>
+                            </div>
+                            <div class="formula-breakdown">
+                                <p class="quiet-text"><strong>Energy</strong> = Power (W) ÷ 1000 × Time (hours)</p>
+                                <p class="quiet-text"><strong>PUE</strong> = 1.2 (datacenter overhead)</p>
+                                <p class="quiet-text"><strong>Grid</strong> = Regional carbon intensity</p>
+                            </div>
+                        </div>
+                    </details>
+                </section>
+
+                <!-- Power tiers (quiet) -->
+                <section class="panel panel--quiet">
+                    <details>
+                        <summary>Model power tiers</summary>
+                        <div class="quiet-content">
+                            <table class="power-table">
+                                <tr><td>Small</td><td>50-150W</td><td>Haiku, Gemini Flash</td></tr>
+                                <tr><td>Medium</td><td>150-350W</td><td>GPT-5.2 Instant, Sonnet</td></tr>
+                                <tr><td>Large</td><td>350-600W</td><td>GPT-5.2 Pro, Opus</td></tr>
+                                <tr><td>Image</td><td>300-600W</td><td>DALL-E, Stable Diffusion</td></tr>
+                            </table>
+                            <p class="quiet-text">Based on <a href="https://arxiv.org/abs/2311.16863" target="_blank">Luccioni et al. 2023</a></p>
+                        </div>
+                    </details>
+                </section>
             </div>
         </main>
 
@@ -195,8 +238,6 @@
     <div class="hidden" id="result-hero-section"></div>
     <div class="hidden" id="result-rating"></div>
     <div class="hidden" id="model-source"></div>
-    <div class="hidden" id="detection-explanation"></div>
-    <div class="hidden" id="explanation-content"></div>
     <div class="hidden" id="comparison-visual"></div>
     <div class="hidden" id="bar-container"></div>
     <div class="hidden" id="savings-text"></div>
