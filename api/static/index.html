@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green AI - CO2 Emissions Tracker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Green AI</h1>
+            <p class="subtitle">See the carbon footprint of your AI usage</p>
+        </header>
+
+        <main>
+            <!-- Step 1: Location -->
+            <section class="card" id="step-location">
+                <h2>1. Where are you?</h2>
+                <div class="location-options">
+                    <button class="btn-secondary" id="btn-geolocation" onclick="detectLocation()">
+                        <span class="icon">📍</span> Use my location
+                    </button>
+                    <span class="or-divider">or</span>
+                    <select id="country-select" onchange="selectCountry(this.value)">
+                        <option value="">Select your country...</option>
+                    </select>
+                </div>
+                <div id="location-result" class="location-result hidden">
+                    <span class="location-badge" id="selected-location">-</span>
+                    <button class="btn-text" onclick="resetLocation()">Change</button>
+                </div>
+            </section>
+
+            <!-- Step 2: AI Provider -->
+            <section class="card" id="step-provider">
+                <h2>2. Which AI are you using?</h2>
+                <div class="provider-grid" id="provider-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+            <!-- Step 3: Results -->
+            <section class="card hidden" id="step-results">
+                <h2>Your AI Carbon Footprint</h2>
+
+                <div class="result-hero">
+                    <div class="result-main">
+                        <span class="result-big" id="result-intensity">-</span>
+                        <span class="result-unit">g CO₂/kWh</span>
+                    </div>
+                    <div class="result-rating" id="result-rating">-</div>
+                </div>
+
+                <div class="result-details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">AI Provider</span>
+                        <span class="detail-value" id="detail-provider">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Likely Datacenter</span>
+                        <span class="detail-value" id="detail-datacenter">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Your Location</span>
+                        <span class="detail-value" id="detail-location">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Renewables</span>
+                        <span class="detail-value" id="detail-renewables">-</span>
+                    </div>
+                </div>
+
+                <!-- Detection explanation -->
+                <div class="detection-explanation" id="detection-explanation">
+                    <details>
+                        <summary>Why this datacenter?</summary>
+                        <div class="explanation-content" id="explanation-content"></div>
+                    </details>
+                </div>
+
+                <!-- Usage Scenarios -->
+                <div class="scenarios-section">
+                    <h3>What does this mean in practice?</h3>
+                    <div class="scenario-grid" id="scenario-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Real-world comparisons -->
+                <div class="equivalents-section hidden" id="equivalents-section">
+                    <h3>Your daily AI usage equals...</h3>
+                    <div class="equivalents-grid" id="equivalents-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Per-request estimate -->
+                <div class="estimate-box">
+                    <h3>Calculate your own scenario</h3>
+                    <div class="estimate-inputs">
+                        <div class="input-group">
+                            <label>Response time (ms)</label>
+                            <input type="number" id="latency-input" value="2500" min="100" max="60000">
+                        </div>
+                        <button class="btn-primary" onclick="calculateEmissions()">Calculate</button>
+                    </div>
+                    <div class="estimate-result hidden" id="estimate-result">
+                        <span class="estimate-value" id="estimate-emissions">-</span>
+                        <span class="estimate-label">grams CO₂ per request</span>
+                        <div class="estimate-equivalent" id="estimate-equivalent"></div>
+                    </div>
+                </div>
+
+                <!-- Comparison with other regions -->
+                <div class="comparison-section">
+                    <h3>Cleanest datacenters for this provider</h3>
+                    <div class="comparison-list" id="comparison-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button class="btn-text" onclick="resetAll()">Start over</button>
+            </section>
+
+            <!-- Quick Stats -->
+            <section class="card stats">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-cleanest-region">-</span>
+                        <span class="stat-label">Cleanest region</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-dirtiest-region">-</span>
+                        <span class="stat-label">Most carbon-heavy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-regions">-</span>
+                        <span class="stat-label">Regions tracked</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-requests">0</span>
+                        <span class="stat-label">Calculations today</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Green AI v1.0 | <a href="/docs">API Docs</a> | <a href="/v1/analytics">Analytics</a></p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

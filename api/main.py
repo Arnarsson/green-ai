@@ -12,9 +12,11 @@ Provides:
 Version: 1.0.0 (MVP)
 """
 
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -36,6 +38,7 @@ from .models import (
 from .detection import detect_provider_and_region
 from .emissions import calculate_emissions
 from .database import PROVIDER_DATABASE, DATACENTER_DATABASE, get_grid_intensity
+from .analytics import analytics
 
 # Setup logging
 logger = setup_logging()
@@ -96,6 +99,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+# Dashboard route
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard():
+    """Serve the dashboard HTML"""
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    raise HTTPException(status_code=404, detail="Dashboard not found")
+
 
 # Custom exception handler for GreenAIException
 @app.exception_handler(GreenAIException)
@@ -129,11 +147,13 @@ async def root():
         "version": settings.app_version,
         "environment": settings.environment,
         "docs": "/docs",
+        "dashboard": "/dashboard",
         "endpoints": {
             "estimate": "POST /v1/estimate",
             "detect_and_estimate": "POST /v1/detect-and-estimate",
             "providers": "GET /v1/providers",
             "regions": "GET /v1/regions",
+            "analytics": "GET /v1/analytics",
             "health": "GET /health",
             "metrics": "GET /metrics",
         },
@@ -235,6 +255,16 @@ async def estimate_emissions_endpoint(request: Request, data: EstimateRequest):
         f"(provider={data.provider}, region={data.region})"
     )
 
+    # Track analytics
+    analytics.track_estimate(
+        endpoint="/v1/estimate",
+        provider=data.provider,
+        region=data.region,
+        country=grid_intensity.get("country"),
+        emissions_g=result["emissions_g"],
+        energy_kwh=result["energy_kwh"],
+    )
+
     return EstimateResponse(
         emissions_g=result["emissions_g"],
         emissions_kg=result["emissions_kg"],
@@ -285,6 +315,16 @@ async def detect_and_estimate_endpoint(request: Request, data: DetectAndEstimate
         power_watts=data.power_watts or settings.default_power_watts,
         grid_intensity_g_kwh=grid_intensity["intensity_g_per_kwh"],
         pue=data.pue or settings.default_pue,
+    )
+
+    # Track analytics
+    analytics.track_estimate(
+        endpoint="/v1/detect-and-estimate",
+        provider=detection["provider"],
+        region=detection["region"],
+        country=detection["country"],
+        emissions_g=result["emissions_g"],
+        energy_kwh=result["energy_kwh"],
     )
 
     return DetectAndEstimateResponse(
@@ -341,6 +381,17 @@ async def list_regions():
             )
 
     return regions
+
+
+@app.get("/v1/analytics")
+async def get_analytics():
+    """
+    Get usage analytics and statistics.
+
+    Returns aggregated data about API usage, emissions tracked,
+    and popular providers/regions.
+    """
+    return analytics.get_stats()
 
 
 @app.exception_handler(404)
