@@ -118,47 +118,63 @@ const TASK_MAPPING = {
 // ==========================================================================
 
 const MODEL_DATA = {
-    // OpenAI models
+    // ==========================================================================
+    // OpenAI models (January 2026)
+    // GPT-5.2 released December 2025 - first model above 90% ARC-AGI
+    // Source: https://openai.com/index/introducing-gpt-5-2/
+    // ==========================================================================
     'openai': {
         models: [
-            { id: 'gpt-4o', name: 'GPT-4o', power: 400, params: '~200B (MoE)', tier: 'large',
-              note: 'Flagship multimodal model, optimized inference' },
-            { id: 'gpt-4o-mini', name: 'GPT-4o mini', power: 150, params: '~8B', tier: 'small',
-              note: 'Smaller, faster model for simple tasks' },
-            { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', power: 450, params: '~200B (MoE)', tier: 'large',
-              note: 'Previous generation flagship' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', power: 200, params: '~20B', tier: 'medium',
-              note: 'Fast and cost-effective for basic tasks' },
+            { id: 'gpt-5.2-pro', name: 'GPT-5.2 Pro', power: 550, params: '~600B (MoE)', tier: 'large',
+              note: 'Most intelligent model for hard problems, 400K context' },
+            { id: 'gpt-5.2-thinking', name: 'GPT-5.2 Thinking', power: 450, params: '~400B (MoE)', tier: 'large',
+              note: 'Deep reasoning for coding and complex analysis' },
+            { id: 'gpt-5.2-instant', name: 'GPT-5.2 Instant', power: 200, params: '~100B (MoE)', tier: 'medium',
+              note: 'Fast everyday model, warm conversational tone' },
+            { id: 'gpt-5.2-codex', name: 'GPT-5.2 Codex', power: 500, params: '~500B (MoE)', tier: 'large',
+              note: 'Specialized for professional software engineering' },
+            { id: 'gpt-4o', name: 'GPT-4o (Legacy)', power: 350, params: '~200B (MoE)', tier: 'medium',
+              note: 'Previous gen multimodal, still widely used' },
             { id: 'dall-e-3', name: 'DALL-E 3', power: 600, params: 'N/A', tier: 'image',
-              note: 'Image generation - GPU intensive' },
+              note: 'Image generation - GPU intensive diffusion' },
         ],
-        source: 'Power estimates based on Patterson et al. 2021, scaled for model size'
+        source: 'Patterson et al. 2021 baseline, scaled for GPT-5.2 architecture (openai.com/gpt-5/)'
     },
 
-    // Anthropic models
+    // ==========================================================================
+    // Anthropic Claude models (January 2026)
+    // Claude 4.5 series released Nov 2025 - Opus 4.5 is flagship
+    // Source: https://www.anthropic.com/news/claude-haiku-4-5
+    // ==========================================================================
     'anthropic': {
         models: [
-            { id: 'claude-opus', name: 'Claude 3.5 Opus', power: 500, params: '~200B+', tier: 'large',
-              note: 'Most capable model, complex reasoning' },
-            { id: 'claude-sonnet', name: 'Claude 3.5 Sonnet', power: 300, params: '~70B', tier: 'medium',
-              note: 'Balanced performance and efficiency' },
-            { id: 'claude-haiku', name: 'Claude 3.5 Haiku', power: 100, params: '~20B', tier: 'small',
-              note: 'Fast and lightweight for simple tasks' },
+            { id: 'claude-opus-4.5', name: 'Claude Opus 4.5', power: 550, params: '~300B+', tier: 'large',
+              note: 'Flagship model, multi-day projects in hours' },
+            { id: 'claude-sonnet-4.5', name: 'Claude Sonnet 4.5', power: 300, params: '~100B', tier: 'medium',
+              note: 'Best coding/agent performance, 1M token context' },
+            { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', power: 100, params: '~35B', tier: 'small',
+              note: 'Fast and cheap, matches old Sonnet 4 performance' },
         ],
-        source: 'Estimates based on Luccioni et al. 2023 measurements of similar-sized models'
+        source: 'Luccioni et al. 2023 baseline, scaled for Claude 4.5 (anthropic.com/news)'
     },
 
-    // Google models
+    // ==========================================================================
+    // Google Gemini models (January 2026)
+    // Gemini 3 Flash released - outperforms 2.5 Pro at 3x speed
+    // Source: https://blog.google/products/gemini/gemini-3-flash/
+    // ==========================================================================
     'google': {
         models: [
-            { id: 'gemini-ultra', name: 'Gemini Ultra', power: 550, params: '~540B (MoE)', tier: 'large',
-              note: 'Largest Gemini model' },
-            { id: 'gemini-pro', name: 'Gemini 1.5 Pro', power: 350, params: '~175B (MoE)', tier: 'medium',
-              note: 'Versatile model with long context' },
-            { id: 'gemini-flash', name: 'Gemini 1.5 Flash', power: 120, params: '~35B', tier: 'small',
-              note: 'Optimized for speed and efficiency' },
+            { id: 'gemini-3-pro', name: 'Gemini 3 Pro', power: 500, params: '~400B (MoE)', tier: 'large',
+              note: 'Reasoning-first, adaptive thinking, 1M context' },
+            { id: 'gemini-3-flash', name: 'Gemini 3 Flash', power: 180, params: '~100B (MoE)', tier: 'medium',
+              note: 'Frontier intelligence at 3x speed of 2.5 Pro' },
+            { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', power: 400, params: '~300B (MoE)', tier: 'large',
+              note: 'Complex reasoning and coding' },
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', power: 120, params: '~50B (MoE)', tier: 'small',
+              note: 'Cost-effective for general tasks' },
         ],
-        source: 'Estimates based on Google efficiency reports and MoE architecture'
+        source: 'Google efficiency reports, MoE architecture (ai.google.dev/gemini-api/docs/models)'
     },
 
     // Mistral models
@@ -788,6 +804,14 @@ function displayResults(result) {
 
     // Scroll to results
     document.getElementById('step-results').scrollIntoView({ behavior: 'smooth' });
+
+    // Auto-select "Quick Answer" task to show immediate data
+    setTimeout(() => {
+        const quickBtn = document.querySelector('.task-btn');
+        if (quickBtn && !document.querySelector('.task-btn.active')) {
+            selectTask('quick', quickBtn);
+        }
+    }, 500);
 }
 
 // Calculate emissions for a scenario
@@ -930,15 +954,21 @@ function selectTask(taskType, btnElement) {
     }
 
     // Update button state
-    document.querySelectorAll('.task-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.task-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.classList.remove('loading');
+    });
     btnElement.classList.add('active');
+    btnElement.classList.add('loading');
 
     // Set hidden latency value from task mapping
     const task = TASK_MAPPING[taskType];
     document.getElementById('latency-input').value = task.latency;
 
     // Calculate immediately (no need to click "Calculate")
-    calculateEmissionsForTask(taskType);
+    calculateEmissionsForTask(taskType).finally(() => {
+        btnElement.classList.remove('loading');
+    });
 }
 
 // Calculate emissions for selected task
