@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/style.css?v=20260121-10x">
+    <link rel="stylesheet" href="/static/style.css?v=20260121-10x-usage">
 </head>
 <body>
     <!-- Skip link for keyboard navigation -->
@@ -199,23 +199,68 @@
 
                 <!-- Step 4: Usage -->
                 <div class="calc-section hidden" id="step-usage">
-                    <label class="calc-label">⏱️ How are you using it?</label>
-                    <p class="calc-hint">Be honest. We've all had that 47-message thread that could've been one Google search.</p>
-                    <div class="usage-grid">
-                        <button class="usage-btn" data-usage="quick" onclick="selectUsage('quick')">
-                            <span class="usage-icon">💬</span>
-                            <span class="usage-name">Quick chat</span>
-                            <span class="usage-time">~500ms</span>
+                    <label class="calc-label">⚡ What kind of task?</label>
+                    <p class="calc-hint">Different tasks = different GPU time = different carbon footprint</p>
+                    <div class="usage-cards">
+                        <button class="usage-card" data-usage="quick" onclick="selectUsage('quick')">
+                            <div class="usage-card-header">
+                                <span class="usage-emoji">💬</span>
+                                <span class="usage-multiplier">1x</span>
+                            </div>
+                            <div class="usage-card-body">
+                                <span class="usage-title">Quick question</span>
+                                <span class="usage-examples">"Translate this" · "What's 2+2?"</span>
+                            </div>
+                            <div class="usage-card-footer">
+                                <div class="power-bars">
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar"></span>
+                                    <span class="power-bar"></span>
+                                    <span class="power-bar"></span>
+                                    <span class="power-bar"></span>
+                                </div>
+                                <span class="usage-estimate" id="est-quick">~0.02g</span>
+                            </div>
                         </button>
-                        <button class="usage-btn" data-usage="standard" onclick="selectUsage('standard')">
-                            <span class="usage-icon">✍️</span>
-                            <span class="usage-name">Writing</span>
-                            <span class="usage-time">~3 seconds</span>
+                        <button class="usage-card" data-usage="standard" onclick="selectUsage('standard')">
+                            <div class="usage-card-header">
+                                <span class="usage-emoji">✍️</span>
+                                <span class="usage-multiplier">6x</span>
+                            </div>
+                            <div class="usage-card-body">
+                                <span class="usage-title">Write something</span>
+                                <span class="usage-examples">"Draft an email" · "Summarize this"</span>
+                            </div>
+                            <div class="usage-card-footer">
+                                <div class="power-bars">
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar"></span>
+                                    <span class="power-bar"></span>
+                                </div>
+                                <span class="usage-estimate" id="est-standard">~0.08g</span>
+                            </div>
                         </button>
-                        <button class="usage-btn" data-usage="deep" onclick="selectUsage('deep')">
-                            <span class="usage-icon">🧠</span>
-                            <span class="usage-name">Deep thinking</span>
-                            <span class="usage-time">~10 seconds</span>
+                        <button class="usage-card" data-usage="deep" onclick="selectUsage('deep')">
+                            <div class="usage-card-header">
+                                <span class="usage-emoji">🧠</span>
+                                <span class="usage-multiplier">20x</span>
+                            </div>
+                            <div class="usage-card-body">
+                                <span class="usage-title">Think hard</span>
+                                <span class="usage-examples">"Debug my code" · "Analyze this data"</span>
+                            </div>
+                            <div class="usage-card-footer">
+                                <div class="power-bars">
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar active"></span>
+                                    <span class="power-bar active"></span>
+                                </div>
+                                <span class="usage-estimate" id="est-deep">~0.25g</span>
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -491,6 +536,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260121-10x"></script>
+    <script src="/static/app.js?v=20260121-10x-usage"></script>
 </body>
 </html>

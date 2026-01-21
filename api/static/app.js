@@ -539,6 +539,9 @@ function selectModel(modelId) {
 
     // Show usage step
     document.getElementById('step-usage').classList.remove('hidden');
+
+    // Update emission estimates in usage cards
+    updateUsageEstimates();
 }
 
 // ============================================
@@ -547,13 +550,47 @@ function selectModel(modelId) {
 function selectUsage(usageKey) {
     selectedUsage = usageKey;
 
-    // Update button states
-    document.querySelectorAll('.usage-btn').forEach(btn => {
-        btn.classList.toggle('selected', btn.dataset.usage === usageKey);
+    // Update card states
+    document.querySelectorAll('.usage-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.usage === usageKey);
     });
 
     // Show CTA
     document.getElementById('step-cta').classList.remove('hidden');
+}
+
+// Update usage card emission estimates based on selected model
+function updateUsageEstimates() {
+    if (!selectedModel || !selectedLocation) return;
+
+    const model = Object.values(PROVIDERS).flatMap(p => p.models).find(m => m.id === selectedModel);
+    if (!model) return;
+
+    // Get base carbon intensity from selected location
+    const region = DATACENTER_REGIONS[selectedLocation.region] || { intensity: 400 };
+    const intensity = region.intensity;
+
+    // Base calculation: 400W × 3s = 0.33 Wh = 0.00033 kWh → grams
+    const baseKwh = (400 * 3) / (1000 * 3600); // 400W for 3 seconds
+    const baseCO2 = baseKwh * 1.2 * intensity * 1000; // PUE 1.2, convert to grams
+
+    // Adjust for model size (rough multipliers based on parameters)
+    const modelMultiplier = model.params ?
+        (model.params.includes('1T') ? 4 : model.params.includes('400B') ? 2.5 : model.params.includes('70B') ? 1.5 : 1) : 1;
+
+    // Calculate for each usage tier
+    const quickCO2 = (baseCO2 * modelMultiplier * 1).toFixed(2);
+    const standardCO2 = (baseCO2 * modelMultiplier * 6).toFixed(2);
+    const deepCO2 = (baseCO2 * modelMultiplier * 20).toFixed(2);
+
+    // Update the estimate displays
+    const estQuick = document.getElementById('est-quick');
+    const estStandard = document.getElementById('est-standard');
+    const estDeep = document.getElementById('est-deep');
+
+    if (estQuick) estQuick.textContent = `~${quickCO2}g`;
+    if (estStandard) estStandard.textContent = `~${standardCO2}g`;
+    if (estDeep) estDeep.textContent = `~${deepCO2}g`;
 }
 
 // ============================================
