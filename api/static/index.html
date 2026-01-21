@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/style.css?v=20260121c">
+    <link rel="stylesheet" href="/static/style.css?v=20260121e">
 </head>
 <body>
     <!-- Skip link for keyboard navigation -->
@@ -36,18 +36,14 @@
                 </div>
                 <div class="modal-body">
                     <div class="setting-group">
-                        <label class="setting-label">🔑 OpenRouter API Key</label>
-                        <p class="setting-hint">Enable real datacenter detection by making actual API calls (~$0.00001/detection)</p>
-                        <div class="setting-row">
-                            <input type="password" id="openrouter-key" class="setting-input" placeholder="sk-or-..." />
-                            <button class="btn btn-small" onclick="saveOpenRouterKey()">Save</button>
-                        </div>
-                        <p class="setting-status" id="key-status"></p>
-                        <a href="https://openrouter.ai/keys" target="_blank" class="setting-link">Get a free API key →</a>
+                        <label class="setting-label">🔍 Real Datacenter Detection</label>
+                        <p class="setting-hint">Makes actual API calls to detect which datacenter serves your requests</p>
+                        <p class="setting-status" id="key-status">Loading...</p>
                     </div>
                     <div class="setting-info">
-                        <p><strong>With API key:</strong> Makes real API call to detect actual datacenter</p>
-                        <p><strong>Without:</strong> Estimates based on closest datacenter (current behavior)</p>
+                        <p><strong>With detection:</strong> Makes a real API call (~$0.00001) to detect actual datacenter</p>
+                        <p><strong>Without:</strong> Estimates based on the closest datacenter to you</p>
+                        <p><strong>Limit:</strong> 3 detections per session to keep costs minimal</p>
                     </div>
                 </div>
             </div>
@@ -271,6 +267,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260121d"></script>
+    <script src="/static/app.js?v=20260121e"></script>
 </body>
 </html>

@@ -218,11 +218,31 @@ function hideError() {
 }
 
 // ============================================
-// OPENROUTER DETECTION
+// OPENROUTER DETECTION (via backend proxy)
 // ============================================
-let openrouterApiKey = localStorage.getItem('openrouter_api_key') || null;
-let detectionCallsUsed = 0;
-const MAX_DETECTION_CALLS = 3; // Limit per session
+
+// Generate unique session ID for rate limiting
+const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+// Detection status (fetched from server)
+let detectionStatus = {
+    available: false,
+    remaining_calls: 0,
+    max_calls: 3
+};
+
+// Fetch detection status from server
+async function fetchDetectionStatus() {
+    try {
+        const response = await fetch(`/v1/detect-datacenter/status?session_id=${SESSION_ID}`);
+        if (response.ok) {
+            detectionStatus = await response.json();
+        }
+    } catch (error) {
+        console.warn('Could not fetch detection status:', error);
+    }
+    return detectionStatus;
+}
 
 async function detectWithOpenRouter(modelId, providerKey) {
     const openrouterModel = OPENROUTER_MODELS[modelId];
@@ -231,94 +251,60 @@ async function detectWithOpenRouter(modelId, providerKey) {
         return null;
     }
 
-    if (!openrouterApiKey) {
-        return null; // No API key, skip detection
-    }
-
-    // Check call limit
-    if (detectionCallsUsed >= MAX_DETECTION_CALLS) {
-        console.log(`Detection limit reached (${MAX_DETECTION_CALLS} calls per session)`);
+    // Check if detection is available
+    if (!detectionStatus.available || detectionStatus.remaining_calls <= 0) {
+        console.log('Detection not available or limit reached');
         return null;
     }
 
     try {
-        detectionCallsUsed++;
-        const startTime = performance.now();
-
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const response = await fetch('/v1/detect-datacenter', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${openrouterApiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'Green AI Carbon Calculator'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 model: openrouterModel,
-                messages: [{ role: 'user', content: 'hi' }],
-                max_tokens: 1
+                session_id: SESSION_ID
             })
         });
 
-        const endTime = performance.now();
-        const latencyMs = Math.round(endTime - startTime);
-
-        // Parse response headers for location hints
-        const cfRay = response.headers.get('cf-ray'); // Cloudflare edge location
-        const serverRegion = response.headers.get('x-ratelimit-remaining-requests');
-
         const data = await response.json();
 
-        // Extract any location info from response
+        // Update remaining calls
+        detectionStatus.remaining_calls = data.remaining_calls;
+
+        if (!data.success) {
+            console.warn('Detection failed:', data.error);
+            return null;
+        }
+
+        // Build detection result
         const detectionResult = {
-            latencyMs,
-            cfRay,
-            model: data.model,
+            latencyMs: data.latency_ms,
+            cfRay: data.cf_ray,
+            model: data.detected_model,
             provider: providerKey,
+            confidence: data.confidence,
+            likelyRegion: data.likely_region,
             detectedAt: new Date().toISOString()
         };
 
-        // Estimate region from latency
-        // < 100ms = likely same continent, < 50ms = likely same region
-        if (latencyMs < 50) {
-            detectionResult.confidence = 'high';
-            detectionResult.likelyRegion = 'same_region';
-        } else if (latencyMs < 150) {
-            detectionResult.confidence = 'medium';
-            detectionResult.likelyRegion = 'same_continent';
-        } else {
-            detectionResult.confidence = 'low';
-            detectionResult.likelyRegion = 'cross_continental';
-        }
-
-        console.log('OpenRouter detection result:', detectionResult);
+        console.log('Detection result:', detectionResult);
         return detectionResult;
 
     } catch (error) {
-        console.error('OpenRouter detection failed:', error);
+        console.error('Detection request failed:', error);
         return null;
     }
 }
 
-function setOpenRouterKey(key) {
-    openrouterApiKey = key;
-    if (key) {
-        localStorage.setItem('openrouter_api_key', key);
-    } else {
-        localStorage.removeItem('openrouter_api_key');
-    }
-}
-
-function hasOpenRouterKey() {
-    return !!openrouterApiKey;
-}
-
 function getRemainingDetections() {
-    return Math.max(0, MAX_DETECTION_CALLS - detectionCallsUsed);
+    return detectionStatus.remaining_calls;
 }
 
 function canDetect() {
-    return hasOpenRouterKey() && detectionCallsUsed < MAX_DETECTION_CALLS;
+    return detectionStatus.available && detectionStatus.remaining_calls > 0;
 }
 
 // Settings modal functions
@@ -326,51 +312,29 @@ function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('hidden');
 
-    // Update key status display
+    // Update status display when opening
     if (!modal.classList.contains('hidden')) {
-        updateKeyStatus();
+        updateDetectionStatus();
     }
 }
 
-function updateKeyStatus() {
+async function updateDetectionStatus() {
+    await fetchDetectionStatus();
     const statusEl = document.getElementById('key-status');
-    const inputEl = document.getElementById('openrouter-key');
 
-    if (hasOpenRouterKey()) {
-        const remaining = getRemainingDetections();
+    if (detectionStatus.available) {
+        const remaining = detectionStatus.remaining_calls;
+        const max = detectionStatus.max_calls;
         if (remaining > 0) {
-            statusEl.textContent = `✓ API key active · ${remaining}/${MAX_DETECTION_CALLS} detections remaining`;
+            statusEl.textContent = `✓ Real detection enabled · ${remaining}/${max} detections remaining this session`;
             statusEl.classList.remove('error');
         } else {
-            statusEl.textContent = `✓ API key active · Session limit reached (refresh for more)`;
+            statusEl.textContent = `✓ Real detection enabled · Session limit reached (refresh for more)`;
             statusEl.classList.add('error');
         }
-        inputEl.value = '••••••••••••••••';
     } else {
-        statusEl.textContent = '';
-    }
-}
-
-function saveOpenRouterKey() {
-    const inputEl = document.getElementById('openrouter-key');
-    const statusEl = document.getElementById('key-status');
-    const key = inputEl.value.trim();
-
-    if (key && !key.startsWith('••')) {
-        if (key.startsWith('sk-or-')) {
-            setOpenRouterKey(key);
-            statusEl.textContent = '✓ API key saved - real detection enabled';
-            statusEl.classList.remove('error');
-            inputEl.value = '••••••••••••••••';
-        } else {
-            statusEl.textContent = '✗ Invalid key format (should start with sk-or-)';
-            statusEl.classList.add('error');
-        }
-    } else if (!key || key === '') {
-        setOpenRouterKey(null);
-        statusEl.textContent = 'API key removed';
-        statusEl.classList.remove('error');
-        inputEl.value = '';
+        statusEl.textContent = '⚠️ Real detection not available (API key not configured on server)';
+        statusEl.classList.add('error');
     }
 }
 
@@ -382,6 +346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateCountryDropdown();
     populateProviders();
     await loadDatacenters();
+    await fetchDetectionStatus(); // Check if real detection is available
     updateFooterStats();
 });
 

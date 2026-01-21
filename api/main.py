@@ -23,6 +23,10 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 import logging
+import httpx
+import time
+from pydantic import BaseModel
+from typing import Optional
 
 from .config import settings
 from .logging_config import setup_logging, RequestLoggingMiddleware, get_request_id
@@ -400,6 +404,152 @@ async def get_analytics():
     and popular providers/regions.
     """
     return analytics.get_stats()
+
+
+# ============================================
+# OPENROUTER DETECTION PROXY
+# ============================================
+
+# Session tracking for rate limiting (in-memory, resets on restart)
+_session_calls: dict[str, int] = {}
+
+
+class DetectDatacenterRequest(BaseModel):
+    """Request model for datacenter detection"""
+
+    model: str  # OpenRouter model ID (e.g., "openai/gpt-4o")
+    session_id: str  # Client session ID for rate limiting
+
+
+class DetectDatacenterResponse(BaseModel):
+    """Response model for datacenter detection"""
+
+    success: bool
+    latency_ms: Optional[int] = None
+    cf_ray: Optional[str] = None
+    detected_model: Optional[str] = None
+    confidence: Optional[str] = None
+    likely_region: Optional[str] = None
+    remaining_calls: int
+    error: Optional[str] = None
+
+
+@app.get("/v1/detect-datacenter/status")
+async def detect_datacenter_status(session_id: str = "default"):
+    """
+    Check if OpenRouter detection is available and how many calls remain.
+    """
+    max_calls = settings.openrouter_max_calls_per_session
+    used_calls = _session_calls.get(session_id, 0)
+    remaining = max(0, max_calls - used_calls)
+
+    return {
+        "available": bool(settings.openrouter_api_key),
+        "remaining_calls": remaining,
+        "max_calls": max_calls,
+    }
+
+
+@app.post("/v1/detect-datacenter", response_model=DetectDatacenterResponse)
+async def detect_datacenter(request: Request, data: DetectDatacenterRequest):
+    """
+    Proxy endpoint for OpenRouter API to detect actual datacenter location.
+
+    Makes a minimal API call to OpenRouter and measures latency + parses
+    response headers to determine the likely datacenter region.
+
+    Rate limited to OPENROUTER_MAX_CALLS_PER_SESSION per session.
+    """
+    # Check if API key is configured
+    if not settings.openrouter_api_key:
+        return DetectDatacenterResponse(
+            success=False,
+            remaining_calls=0,
+            error="OpenRouter API key not configured",
+        )
+
+    # Check session rate limit
+    max_calls = settings.openrouter_max_calls_per_session
+    used_calls = _session_calls.get(data.session_id, 0)
+    remaining = max(0, max_calls - used_calls)
+
+    if remaining <= 0:
+        return DetectDatacenterResponse(
+            success=False,
+            remaining_calls=0,
+            error=f"Session limit reached ({max_calls} calls per session)",
+        )
+
+    # Increment call counter
+    _session_calls[data.session_id] = used_calls + 1
+    remaining = max(0, max_calls - used_calls - 1)
+
+    try:
+        start_time = time.perf_counter()
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.openrouter_api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": str(request.base_url),
+                    "X-Title": "Green AI Carbon Calculator",
+                },
+                json={
+                    "model": data.model,
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "max_tokens": 1,
+                },
+            )
+
+        end_time = time.perf_counter()
+        latency_ms = int((end_time - start_time) * 1000)
+
+        # Parse response
+        cf_ray = response.headers.get("cf-ray")
+        response_data = response.json()
+        detected_model = response_data.get("model")
+
+        # Determine confidence and region from latency
+        if latency_ms < 50:
+            confidence = "high"
+            likely_region = "same_region"
+        elif latency_ms < 150:
+            confidence = "medium"
+            likely_region = "same_continent"
+        else:
+            confidence = "low"
+            likely_region = "cross_continental"
+
+        logger.info(
+            f"OpenRouter detection: model={data.model}, latency={latency_ms}ms, "
+            f"confidence={confidence}, session={data.session_id}"
+        )
+
+        return DetectDatacenterResponse(
+            success=True,
+            latency_ms=latency_ms,
+            cf_ray=cf_ray,
+            detected_model=detected_model,
+            confidence=confidence,
+            likely_region=likely_region,
+            remaining_calls=remaining,
+        )
+
+    except httpx.TimeoutException:
+        return DetectDatacenterResponse(
+            success=False,
+            remaining_calls=remaining,
+            error="Request timed out",
+        )
+    except Exception as e:
+        logger.error(f"OpenRouter detection failed: {e}")
+        return DetectDatacenterResponse(
+            success=False,
+            remaining_calls=remaining,
+            error=str(e),
+        )
 
 
 @app.exception_handler(404)

@@ -70,6 +70,14 @@ class Settings(BaseSettings):
     datadog_api_key: Optional[str] = Field(default=None, description="Datadog API key for metrics")
     enable_metrics: bool = Field(default=True, description="Enable Prometheus metrics endpoint")
 
+    # OpenRouter (for real datacenter detection)
+    openrouter_api_key: Optional[str] = Field(
+        default=None, description="OpenRouter API key for real datacenter detection"
+    )
+    openrouter_max_calls_per_session: int = Field(
+        default=3, description="Max OpenRouter detection calls per session"
+    )
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
