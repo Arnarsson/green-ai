@@ -403,8 +403,21 @@ function showResults() {
         provider.clouds.includes(dc.provider)
     );
 
-    // Pick the most likely one (default region or first available)
-    let likelyDC = providerDCs.find(dc => dc.region === provider.defaultRegion) || providerDCs[0];
+    // Smart datacenter selection: prefer same continent as user, then default region
+    const userContinent = getContinent(selectedLocation.code);
+
+    // First: try to find a datacenter on the same continent as the user
+    let likelyDC = providerDCs.find(dc => getContinent(dc.country) === userContinent);
+
+    // Second: fall back to provider's default region
+    if (!likelyDC) {
+        likelyDC = providerDCs.find(dc => dc.region === provider.defaultRegion);
+    }
+
+    // Last resort: first available
+    if (!likelyDC) {
+        likelyDC = providerDCs[0];
+    }
 
     if (!likelyDC) {
         // Fallback if no datacenter found
