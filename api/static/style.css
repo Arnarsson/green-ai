@@ -586,6 +586,42 @@ details[open] .toggle-icon {
     font-size: 0.8rem;
 }
 
+.country-suggestions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.suggestions-label {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-right: 4px;
+}
+
+.country-chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--stroke);
+    border-radius: 20px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+}
+
+.country-chip:hover {
+    background: var(--surface3);
+    border-color: var(--green);
+    transform: translateY(-1px);
+}
+
+.country-chip:active {
+    transform: translateY(0);
+}
+
 .location-result {
     display: flex;
     align-items: center;

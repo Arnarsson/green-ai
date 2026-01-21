@@ -227,6 +227,14 @@
                             <option value="">Pick a country...</option>
                         </select>
                     </div>
+                    <div class="country-suggestions">
+                        <span class="suggestions-label">Quick pick:</span>
+                        <button class="country-chip" onclick="selectCountry('DK')">🇩🇰 Denmark</button>
+                        <button class="country-chip" onclick="selectCountry('SE')">🇸🇪 Sweden</button>
+                        <button class="country-chip" onclick="selectCountry('NO')">🇳🇴 Norway</button>
+                        <button class="country-chip" onclick="selectCountry('US')">🇺🇸 USA</button>
+                        <button class="country-chip" onclick="selectCountry('GB')">🇬🇧 UK</button>
+                    </div>
                     <div class="location-result hidden" id="location-result">
                         <span class="badge" id="selected-location">Denmark 🇩🇰</span>
                         <button class="btn-text" onclick="resetLocation()">change</button>
