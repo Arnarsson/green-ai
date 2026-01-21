@@ -378,6 +378,39 @@ function updateThemeIcon(theme) {
 }
 
 // ============================================
+// PROGRESS INDICATOR
+// ============================================
+function updateProgress(step) {
+    const steps = document.querySelectorAll('.progress-step');
+    const lines = document.querySelectorAll('.progress-line');
+
+    steps.forEach((stepEl, index) => {
+        const stepNum = index + 1;
+        stepEl.classList.remove('active', 'completed');
+
+        if (stepNum < step) {
+            stepEl.classList.add('completed');
+        } else if (stepNum === step) {
+            stepEl.classList.add('active');
+        }
+    });
+
+    lines.forEach((line, index) => {
+        line.classList.toggle('completed', index < step - 1);
+    });
+}
+
+// ============================================
+// MAP SCROLL HELPER
+// ============================================
+function scrollToMap() {
+    const mapPanel = document.getElementById('map-panel');
+    if (mapPanel && !mapPanel.classList.contains('hidden')) {
+        mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// ============================================
 // CALCULATOR: STEP 1 - LOCATION
 // ============================================
 function populateCountryDropdown() {
@@ -453,6 +486,9 @@ function setLocation(country) {
 
     // Show next step
     document.getElementById('step-provider').classList.remove('hidden');
+
+    // Update progress
+    updateProgress(2);
 }
 
 function resetLocation() {
@@ -512,6 +548,9 @@ function selectProvider(providerKey) {
     document.getElementById('step-model').classList.remove('hidden');
     document.getElementById('step-usage').classList.add('hidden');
     document.getElementById('step-cta').classList.add('hidden');
+
+    // Update progress
+    updateProgress(3);
 }
 
 // ============================================
@@ -542,6 +581,9 @@ function selectModel(modelId) {
 
     // Update emission estimates in usage cards
     updateUsageEstimates();
+
+    // Update progress
+    updateProgress(4);
 }
 
 // ============================================
@@ -557,6 +599,8 @@ function selectUsage(usageKey) {
 
     // Show CTA
     document.getElementById('step-cta').classList.remove('hidden');
+
+    // Keep progress at step 4 until results shown
 }
 
 // Update usage card emission estimates based on selected model
@@ -720,6 +764,9 @@ async function showResults() {
     // Show result panel
     document.getElementById('result-panel').classList.remove('hidden');
     document.getElementById('step-cta').classList.add('hidden');
+
+    // Update progress to results
+    updateProgress(5);
 
     // Initialize and show map
     setTimeout(() => {
@@ -1070,6 +1117,9 @@ function resetCalculator() {
     // Reset all selections
     resetLocation();
     currentResult = null;
+
+    // Reset progress
+    updateProgress(1);
 }
 
 // ============================================

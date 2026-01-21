@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/style.css?v=20260121-10x-results">
+    <link rel="stylesheet" href="/static/style.css?v=20260121-hero">
 </head>
 <body>
     <!-- Skip link for keyboard navigation -->
@@ -155,9 +155,63 @@
                     <span id="error-message">Something went wrong</span>
                 </div>
 
-                <div class="calc-intro">
-                    <h2>Let's find out what your AI habit costs the planet</h2>
-                    <p class="subtitle">Spoiler: it's probably less than your Netflix, but more than you'd think</p>
+                <!-- Hero Section -->
+                <div class="hero-section">
+                    <div class="hero-bg">
+                        <div class="gradient-orb orb-1"></div>
+                        <div class="gradient-orb orb-2"></div>
+                        <div class="particles" id="particles"></div>
+                    </div>
+                    <div class="hero-content">
+                        <h2 class="hero-title">See Your AI's <span class="gradient-text">Carbon Footprint</span></h2>
+                        <p class="hero-subtitle">Every prompt has a price. Let's find out what yours costs the planet.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Banner -->
+                <div class="stats-banner">
+                    <div class="stat-item">
+                        <span class="stat-value green">0.08g</span>
+                        <span class="stat-label">avg AI request</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-cleanest-val">Quebec</span>
+                        <span class="stat-label">cleanest DC</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value red" id="stat-dirtiest-val">Mumbai</span>
+                        <span class="stat-label">dirtiest DC</span>
+                    </div>
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="1">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Location</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="2">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Provider</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="3">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Model</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="4">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Usage</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="5">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Results</span>
+                    </div>
                 </div>
 
                 <!-- Step 1: Location -->
@@ -450,6 +504,42 @@
                         </div>
                     </div>
 
+                    <!-- Show Map Button -->
+                    <button class="btn btn-map" onclick="scrollToMap()">
+                        🗺️ Explore the datacenter map
+                    </button>
+
+                    <!-- Methodology Section -->
+                    <details class="methodology-section">
+                        <summary class="methodology-toggle">
+                            <span>📊 How we calculated this</span>
+                            <span class="toggle-icon">▼</span>
+                        </summary>
+                        <div class="methodology-content">
+                            <div class="method-item">
+                                <h5>⚡ Energy Calculation</h5>
+                                <p>Energy (kWh) = Power (W) × Time (hours) / 1000</p>
+                                <p class="method-note">We use 400W base power for inference, adjusted by model size</p>
+                            </div>
+                            <div class="method-item">
+                                <h5>🌍 Carbon Calculation</h5>
+                                <p>CO₂ (g) = Energy × PUE × Grid Intensity</p>
+                                <p class="method-note">PUE (Power Usage Effectiveness) is 1.2 for modern datacenters</p>
+                            </div>
+                            <div class="method-item">
+                                <h5>📡 Data Sources</h5>
+                                <ul class="method-sources">
+                                    <li><a href="https://ember-climate.org/" target="_blank">Ember Climate</a> - Grid carbon intensity by country</li>
+                                    <li><a href="https://www.iea.org/" target="_blank">IEA</a> - Regional energy statistics</li>
+                                    <li><a href="https://mlco2.github.io/impact/" target="_blank">ML CO2 Impact</a> - AI energy consumption research</li>
+                                </ul>
+                            </div>
+                            <div class="method-disclaimer">
+                                <p>⚠️ These are estimates. Actual emissions vary based on hardware, optimization, load balancing, and real-time grid conditions. We aim for directional accuracy, not precision.</p>
+                            </div>
+                        </div>
+                    </details>
+
                     <!-- Action Buttons -->
                     <div class="result-actions">
                         <button class="btn btn-secondary" onclick="resetCalculator()">↩ Start over</button>
@@ -536,6 +626,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260121-10x-results"></script>
+    <script src="/static/app.js?v=20260121-hero"></script>
 </body>
 </html>
