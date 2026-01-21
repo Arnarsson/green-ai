@@ -68,34 +68,32 @@ const USAGE_PROFILES = {
     deep: { powerW: 400, durationMs: 10000, name: 'Deep thinking' }
 };
 
-// Models per provider with power multipliers (relative to base) - Updated Jan 2026
+// Models per provider with power multipliers (relative to base) - Jan 2026
 const MODELS = {
     openai: [
-        { id: 'gpt-4.1', name: 'GPT-4.1', size: 'flagship', powerMultiplier: 1.0 },
-        { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini', size: 'efficient', powerMultiplier: 0.3 },
-        { id: 'gpt-4.1-nano', name: 'GPT-4.1 nano', size: 'fastest', powerMultiplier: 0.1 },
-        { id: 'o3', name: 'o3', size: 'reasoning', powerMultiplier: 3.0 },
-        { id: 'o4-mini', name: 'o4-mini', size: 'fast reasoning', powerMultiplier: 1.2 },
-        { id: 'o1-pro', name: 'o1 Pro', size: 'high compute', powerMultiplier: 4.0 }
+        { id: 'gpt-5.2', name: 'GPT-5.2', size: 'flagship', powerMultiplier: 1.5 },
+        { id: 'gpt-5.2-thinking', name: 'GPT-5.2 Thinking', size: 'deep reasoning', powerMultiplier: 3.5 },
+        { id: 'gpt-5.2-instant', name: 'GPT-5.2 Instant', size: 'fast', powerMultiplier: 0.4 },
+        { id: 'o3', name: 'o3', size: 'reasoning', powerMultiplier: 4.0 },
+        { id: 'o3-mini', name: 'o3-mini', size: 'efficient reasoning', powerMultiplier: 1.5 }
     ],
     anthropic: [
-        { id: 'opus-4', name: 'Claude Opus 4', size: 'most capable', powerMultiplier: 2.5 },
+        { id: 'opus-4.5', name: 'Claude Opus 4.5', size: 'most capable', powerMultiplier: 3.0 },
         { id: 'sonnet-4', name: 'Claude Sonnet 4', size: 'balanced', powerMultiplier: 1.0 },
-        { id: 'haiku-3.5', name: 'Claude Haiku 3.5', size: 'fastest', powerMultiplier: 0.25 }
+        { id: 'haiku-4', name: 'Claude Haiku 4', size: 'fastest', powerMultiplier: 0.3 }
     ],
     google: [
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', size: 'flagship', powerMultiplier: 1.5 },
         { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', size: 'fast', powerMultiplier: 0.5 },
-        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', size: 'multimodal', powerMultiplier: 0.4 },
-        { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', size: 'cheapest', powerMultiplier: 0.15 }
+        { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', size: 'cheapest', powerMultiplier: 0.15 }
     ],
     cohere: [
-        { id: 'command-r7b', name: 'Command R7B', size: 'on-device', powerMultiplier: 0.1 },
-        { id: 'command-r-plus', name: 'Command R+', size: '128K RAG', powerMultiplier: 1.2 },
-        { id: 'command-r', name: 'Command R', size: 'balanced', powerMultiplier: 0.8 }
+        { id: 'command-a', name: 'Command A', size: 'flagship', powerMultiplier: 1.2 },
+        { id: 'command-r-plus', name: 'Command R+', size: '128K RAG', powerMultiplier: 1.0 },
+        { id: 'command-r7b', name: 'Command R7B', size: 'on-device', powerMultiplier: 0.1 }
     ],
     mistral: [
-        { id: 'mistral-large-2', name: 'Mistral Large 2', size: '128K flagship', powerMultiplier: 1.3 },
+        { id: 'mistral-large', name: 'Mistral Large', size: '128K flagship', powerMultiplier: 1.3 },
         { id: 'mistral-small', name: 'Mistral Small', size: 'efficient', powerMultiplier: 0.3 },
         { id: 'codestral', name: 'Codestral', size: 'code specialist', powerMultiplier: 0.8 },
         { id: 'pixtral-large', name: 'Pixtral Large', size: 'vision', powerMultiplier: 1.4 }
@@ -103,8 +101,7 @@ const MODELS = {
     llama: [
         { id: 'llama-4-maverick', name: 'Llama 4 Maverick', size: '400B MoE', powerMultiplier: 2.0 },
         { id: 'llama-4-scout', name: 'Llama 4 Scout', size: '109B MoE', powerMultiplier: 0.8 },
-        { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', size: '70B params', powerMultiplier: 1.0 },
-        { id: 'llama-3.2-3b', name: 'Llama 3.2 3B', size: 'on-device', powerMultiplier: 0.05 }
+        { id: 'llama-4-scout-mini', name: 'Llama 4 Scout Mini', size: 'efficient', powerMultiplier: 0.3 }
     ]
 };
 
