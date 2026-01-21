@@ -168,6 +168,25 @@ const COUNTRIES = [
 ];
 
 // ============================================
+// ERROR HANDLING
+// ============================================
+function showError(message) {
+    const banner = document.getElementById('error-banner');
+    const msgEl = document.getElementById('error-message');
+    if (banner && msgEl) {
+        msgEl.textContent = message;
+        banner.classList.remove('hidden');
+        // Auto-hide after 5 seconds
+        setTimeout(() => banner.classList.add('hidden'), 5000);
+    }
+}
+
+function hideError() {
+    const banner = document.getElementById('error-banner');
+    if (banner) banner.classList.add('hidden');
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -733,6 +752,7 @@ async function loadDatacenters() {
 
     } catch (error) {
         console.error('Failed to load datacenters:', error);
+        showError('Failed to load datacenter data. Please refresh the page.');
     }
 }
 

@@ -861,6 +861,66 @@ select:focus {
 .hidden { display: none !important; }
 .green { color: var(--green); }
 
+/* Loading state */
+.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--stroke2);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error banner */
+.error-banner {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    color: #fca5a5;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-banner.hidden {
+    display: none !important;
+}
+
+/* Skip link for accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--green);
+    color: var(--bg);
+    padding: 8px 16px;
+    z-index: 100;
+    font-weight: 500;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
@@ -962,5 +1022,142 @@ select:focus {
 
     .legend-quip {
         display: none;
+    }
+
+    /* Mobile touch targets - minimum 44px */
+    .provider-btn,
+    .model-btn,
+    .usage-btn,
+    .btn {
+        min-height: 44px;
+    }
+
+    .model-btn {
+        padding: 14px 12px;
+    }
+
+    .model-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    /* Better mobile spacing */
+    .calc-step {
+        padding: 16px 0;
+    }
+
+    .step-header {
+        margin-bottom: 12px;
+    }
+
+    /* Improve result panel on mobile */
+    .result-panel {
+        padding: 20px 16px;
+    }
+
+    .result-value {
+        font-size: 2rem;
+    }
+
+    .twist-text {
+        font-size: 0.9rem;
+    }
+
+    /* Mobile CTA button */
+    .cta-btn {
+        width: 100%;
+        padding: 16px 24px;
+        font-size: 1rem;
+    }
+}
+
+/* ============================================
+   TABLET (768px - 900px)
+   ============================================ */
+@media (min-width: 501px) and (max-width: 900px) {
+    .provider-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .model-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .usage-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .result-details {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ============================================
+   LARGE SCREENS (1400px+)
+   ============================================ */
+@media (min-width: 1400px) {
+    .calculator {
+        max-width: 520px;
+        padding: 48px 40px;
+    }
+
+    .calc-intro h2 {
+        font-size: 1.6rem;
+    }
+
+    .provider-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    .model-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .result-value {
+        font-size: 4rem;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+/* Focus visible for keyboard navigation */
+.provider-btn:focus-visible,
+.model-btn:focus-visible,
+.usage-btn:focus-visible,
+.btn:focus-visible,
+.cta-btn:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .map-panel {
+        transition: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --stroke: rgba(255, 255, 255, 0.3);
+        --stroke2: rgba(255, 255, 255, 0.5);
+    }
+
+    .provider-btn,
+    .model-btn,
+    .usage-btn {
+        border-width: 2px;
     }
 }

@@ -8,12 +8,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/style.css?v=20260121">
+    <link rel="stylesheet" href="/static/style.css?v=20260121c">
 </head>
 <body>
+    <!-- Skip link for keyboard navigation -->
+    <a href="#calculator" class="skip-link">Skip to calculator</a>
+
     <div class="app" id="app">
         <!-- Header -->
-        <header class="header">
+        <header class="header" role="banner">
             <div class="header-left">
                 <h1>🌍 Green AI</h1>
             </div>
@@ -26,7 +29,13 @@
         <!-- Main Content Area -->
         <main class="main">
             <!-- Calculator Panel (always visible, shrinks when map opens) -->
-            <section class="calculator" id="calculator">
+            <section class="calculator" id="calculator" aria-label="Carbon footprint calculator">
+                <!-- Error banner (hidden by default) -->
+                <div class="error-banner hidden" id="error-banner" role="alert">
+                    <span>⚠️</span>
+                    <span id="error-message">Something went wrong</span>
+                </div>
+
                 <div class="calc-intro">
                     <h2>Let's find out what your AI habit costs the planet</h2>
                     <p class="subtitle">Spoiler: it's probably less than your Netflix, but more than you'd think</p>
@@ -52,19 +61,19 @@
                 </div>
 
                 <!-- Step 2: Provider -->
-                <div class="calc-section hidden" id="step-provider">
-                    <label class="calc-label">🤖 Which AI are you using?</label>
+                <div class="calc-section hidden" id="step-provider" role="group" aria-labelledby="provider-label">
+                    <label class="calc-label" id="provider-label">🤖 Which AI are you using?</label>
                     <p class="calc-hint">No judgment. Okay, maybe a little.</p>
-                    <div class="provider-grid" id="provider-grid">
+                    <div class="provider-grid" id="provider-grid" role="listbox" aria-label="AI providers">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
                 <!-- Step 3: Model -->
-                <div class="calc-section hidden" id="step-model">
-                    <label class="calc-label">🧬 Which model?</label>
+                <div class="calc-section hidden" id="step-model" role="group" aria-labelledby="model-label">
+                    <label class="calc-label" id="model-label">🧬 Which model?</label>
                     <p class="calc-hint">The bigger the brain, the bigger the appetite. Physics is brutal like that.</p>
-                    <div class="model-grid" id="model-grid">
+                    <div class="model-grid" id="model-grid" role="listbox" aria-label="AI models">
                         <!-- Populated by JS based on provider -->
                     </div>
                 </div>
@@ -235,6 +244,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260121b"></script>
+    <script src="/static/app.js?v=20260121c"></script>
 </body>
 </html>
