@@ -712,35 +712,129 @@ async function showResults() {
 function updateResultPanel(result) {
     const { emissions, provider, model, usage, datacenter, userLocation, selectionMethod, distanceKm, detection } = result;
 
-    // Main result
-    document.getElementById('result-value').textContent = emissions.toFixed(2);
+    // Animate counter from 0 to emissions value
+    animateCounter(emissions);
 
-    // Quip with source
-    const quip = getQuip(emissions);
-    document.getElementById('result-quip').textContent = `"${quip.text}"`;
-    document.getElementById('result-source').textContent = `source: ${quip.source}`;
+    // Update gauge needle and grade
+    updateGauge(emissions, datacenter.intensity);
 
-    // Detection badge
-    const isDetected = selectionMethod === 'detected';
-    const badgeHtml = isDetected
-        ? `<span class="detection-badge detected">✓ Detected (${detection?.latencyMs}ms)</span>`
-        : `<span class="detection-badge estimated">~ Estimated</span>`;
+    // Visual comparison cards
+    updateComparisonCards(emissions);
 
-    // Details - include model name and distance
+    // Journey map
+    updateJourneyMap(result);
+
+    // Details
     document.getElementById('detail-grid').textContent = `${datacenter.intensity} g/kWh`;
-    const distanceText = distanceKm ? ` · ${distanceKm.toLocaleString()}km` : '';
-    document.getElementById('detail-region').innerHTML = `${datacenter.city || datacenter.region}${distanceText} ${badgeHtml}`;
+    document.getElementById('detail-region').textContent = `${datacenter.city || datacenter.region}`;
     document.getElementById('detail-renewable').textContent = `${datacenter.renewable || '~30'}%`;
 
-    // Plot twist - now with estimation context
-    const twist = generatePlotTwist(userLocation, datacenter, provider, selectionMethod, distanceKm);
-    document.getElementById('twist-text').textContent = twist;
+    // Initialize scale slider
+    updateScale(10);
 
     // What-if section
     updateWhatIf(result);
+}
 
-    // At-scale calculations
-    updateAtScale(result);
+// Animated counter from 0 to target value
+function animateCounter(target) {
+    const el = document.getElementById('result-value');
+    const duration = 1000;
+    const start = 0;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Easing function (ease-out cubic)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = start + (target - start) * easeOut;
+        el.textContent = current.toFixed(2);
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    requestAnimationFrame(update);
+}
+
+// Update gauge needle position and grade badge
+function updateGauge(emissions, intensity) {
+    const needle = document.getElementById('gauge-needle');
+    const gradeEl = document.getElementById('carbon-grade');
+
+    // Calculate angle based on emissions (0-1g range maps to -90 to 90 degrees)
+    // Lower emissions = more to the left (green), higher = right (red)
+    const normalizedValue = Math.min(emissions / 0.5, 1); // Normalize to 0-1 range
+    const angle = -90 + (normalizedValue * 180); // -90 to 90 degrees
+
+    needle.style.transform = `rotate(${angle}deg)`;
+
+    // Determine grade
+    let grade, gradeClass;
+    if (emissions < 0.05) { grade = 'A+'; gradeClass = 'grade-a'; }
+    else if (emissions < 0.1) { grade = 'A'; gradeClass = 'grade-a'; }
+    else if (emissions < 0.2) { grade = 'B'; gradeClass = 'grade-b'; }
+    else if (emissions < 0.3) { grade = 'C'; gradeClass = 'grade-c'; }
+    else if (emissions < 0.5) { grade = 'D'; gradeClass = 'grade-d'; }
+    else { grade = 'F'; gradeClass = 'grade-d'; }
+
+    gradeEl.textContent = grade;
+    gradeEl.className = `carbon-grade ${gradeClass}`;
+}
+
+// Update visual comparison cards
+function updateComparisonCards(emissions) {
+    // Raindrop: ~0.05g each (USGS median)
+    const raindrops = (emissions / 0.05).toFixed(1);
+    document.getElementById('comp-raindrop').textContent = raindrops;
+
+    // Google search: ~0.2g each (Google 2023)
+    const searches = (emissions / 0.2).toFixed(1);
+    document.getElementById('comp-search').textContent = searches;
+
+    // Human breath: ~0.2g CO2 each (EPA)
+    const breaths = (emissions / 0.2).toFixed(1);
+    document.getElementById('comp-breath').textContent = breaths;
+}
+
+// Update journey map visualization
+function updateJourneyMap(result) {
+    const { distanceKm, datacenter, emissions } = result;
+
+    document.getElementById('journey-distance').textContent = distanceKm
+        ? `${distanceKm.toLocaleString()}km`
+        : '~5,000km';
+    document.getElementById('journey-dc').textContent = datacenter.city || datacenter.region;
+    document.getElementById('journey-grid').textContent = `${datacenter.intensity}g/kWh`;
+    document.getElementById('journey-co2').textContent = `${emissions.toFixed(2)}g CO₂`;
+}
+
+// Update scale calculations based on slider
+function updateScale(requestsPerDay) {
+    if (!currentResult) return;
+
+    const emissions = currentResult.emissions;
+    const daily = emissions * requestsPerDay;
+    const monthly = daily * 30;
+    const yearly = daily * 365;
+
+    document.getElementById('slider-value').textContent = requestsPerDay;
+    document.getElementById('scale-daily').textContent = formatEmissions(daily);
+    document.getElementById('scale-monthly').textContent = formatEmissions(monthly);
+    document.getElementById('scale-yearly').textContent = formatEmissions(yearly);
+
+    // Real-world equivalent for yearly
+    // Driving: ~120g CO2/km (EPA average car)
+    const drivingKm = (yearly / 120).toFixed(1);
+    document.getElementById('scale-equivalent').innerHTML =
+        `🚗 That's like driving <strong>${drivingKm}km</strong> per year`;
+}
+
+function formatEmissions(grams) {
+    if (grams < 1) return `${grams.toFixed(2)}g`;
+    if (grams < 1000) return `${grams.toFixed(0)}g`;
+    return `${(grams / 1000).toFixed(1)}kg`;
 }
 
 function getQuip(emissionsG) {
@@ -849,7 +943,7 @@ function estimateDistance(userCountry, datacenter) {
 }
 
 function updateWhatIf(result) {
-    const { emissions, provider, usage } = result;
+    const { emissions, provider, usage, datacenter, adjustedPower } = result;
 
     // Find the cleanest datacenter for this provider
     const providerDCs = allDatacenters.filter(dc =>
@@ -858,15 +952,22 @@ function updateWhatIf(result) {
 
     if (providerDCs.length > 1) {
         const cleanest = providerDCs[0];
-        const cleanestEmissions = calculateEmissions(cleanest.intensity, usage.powerW, usage.durationMs);
+        const cleanestEmissions = calculateEmissions(cleanest.intensity, adjustedPower, usage.durationMs);
         const savings = ((emissions - cleanestEmissions) / emissions * 100).toFixed(0);
 
         if (savings > 10) {
             document.getElementById('what-if').classList.remove('hidden');
-            document.getElementById('whatif-text').innerHTML =
-                `If ${provider.name} ran in ${cleanest.city || cleanest.region}: <strong>${cleanestEmissions.toFixed(2)}g</strong> per request`;
-            document.getElementById('whatif-saving').textContent =
-                `You'd save ${savings}% — "${getComparisonQuip(savings)}"`;
+
+            // Update current side
+            document.getElementById('whatif-current').textContent = `${emissions.toFixed(2)}g`;
+            document.getElementById('whatif-current-region').textContent = datacenter.city || datacenter.region;
+
+            // Update best side
+            document.getElementById('whatif-best').textContent = `${cleanestEmissions.toFixed(2)}g`;
+            document.getElementById('whatif-best-region').textContent = cleanest.city || cleanest.region;
+
+            // Update savings badge
+            document.getElementById('whatif-savings').textContent = `-${savings}%`;
         } else {
             document.getElementById('what-if').classList.add('hidden');
         }
@@ -1118,4 +1219,204 @@ function updateFooterStats() {
     document.getElementById('stat-cleanest').textContent = cleanest?.city || 'Quebec';
     document.getElementById('stat-dirtiest').textContent = dirtiest?.city || 'Mumbai';
     document.getElementById('stat-count').textContent = allDatacenters.length || '60+';
+}
+
+// ============================================
+// LEADERBOARD MODAL
+// ============================================
+function toggleLeaderboard() {
+    const modal = document.getElementById('leaderboard-modal');
+    modal.classList.toggle('hidden');
+
+    if (!modal.classList.contains('hidden')) {
+        renderLeaderboard('all');
+    }
+}
+
+function filterLeaderboard(provider) {
+    // Update filter button states
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === provider);
+    });
+    renderLeaderboard(provider);
+}
+
+function renderLeaderboard(filter) {
+    const table = document.getElementById('leaderboard-table');
+    let dcs = [...allDatacenters].sort((a, b) => a.intensity - b.intensity);
+
+    if (filter !== 'all') {
+        dcs = dcs.filter(dc => dc.provider === filter);
+    }
+
+    table.innerHTML = dcs.slice(0, 20).map((dc, i) => {
+        const rank = i + 1;
+        const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+        const intensityClass = getIntensityColor(dc.intensity);
+        const grade = getIntensityRating(dc.intensity);
+
+        return `
+            <div class="leaderboard-row">
+                <div class="leaderboard-rank ${rankClass}">#${rank}</div>
+                <div>
+                    <div class="leaderboard-name">${dc.city}, ${dc.country}</div>
+                    <div class="leaderboard-provider">${dc.provider.toUpperCase()} / ${dc.region}</div>
+                </div>
+                <div class="leaderboard-intensity ${intensityClass}">${dc.intensity}g</div>
+                <div class="leaderboard-grade ${intensityClass}" style="background: var(--${intensityClass}-bg); color: var(--${intensityClass});">${grade}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================
+// COMPARE MODE MODAL
+// ============================================
+function toggleCompareMode() {
+    const modal = document.getElementById('compare-modal');
+    modal.classList.toggle('hidden');
+
+    if (!modal.classList.contains('hidden')) {
+        populateCompareSelects();
+    }
+}
+
+function populateCompareSelects() {
+    const selects = ['compare-select-1', 'compare-select-2', 'compare-select-3'];
+
+    selects.forEach((selectId, index) => {
+        const select = document.getElementById(selectId);
+        const currentValue = select.value;
+
+        // Clear existing options except first
+        select.innerHTML = index === 2
+            ? '<option value="">(Optional)</option>'
+            : '<option value="">Select model...</option>';
+
+        // Add all models from all providers
+        Object.entries(MODELS).forEach(([providerKey, models]) => {
+            const provider = PROVIDERS[providerKey];
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = `${providerKey}:${model.id}`;
+                option.textContent = `${provider.emoji} ${model.name}`;
+                select.appendChild(option);
+            });
+        });
+
+        // Restore value if it exists
+        if (currentValue) select.value = currentValue;
+    });
+}
+
+function updateComparison() {
+    const resultsEl = document.getElementById('compare-results');
+    const selections = [
+        document.getElementById('compare-select-1').value,
+        document.getElementById('compare-select-2').value,
+        document.getElementById('compare-select-3').value
+    ].filter(v => v);
+
+    if (selections.length < 2) {
+        resultsEl.classList.add('hidden');
+        return;
+    }
+
+    resultsEl.classList.remove('hidden');
+
+    // Calculate emissions for each selection
+    const results = selections.map(sel => {
+        const [providerKey, modelId] = sel.split(':');
+        const provider = PROVIDERS[providerKey];
+        const model = MODELS[providerKey].find(m => m.id === modelId);
+
+        // Use standard usage profile and default datacenter
+        const usage = USAGE_PROFILES.standard;
+        const adjustedPower = usage.powerW * model.powerMultiplier;
+        const intensity = provider.defaultIntensity;
+        const emissions = calculateEmissions(intensity, adjustedPower, usage.durationMs);
+
+        return { providerKey, provider, model, emissions };
+    });
+
+    // Find winner (lowest emissions)
+    const minEmissions = Math.min(...results.map(r => r.emissions));
+
+    resultsEl.innerHTML = results.map(r => {
+        const isWinner = r.emissions === minEmissions;
+        return `
+            <div class="compare-card ${isWinner ? 'winner' : ''}">
+                <div class="compare-model-name">${r.model.name}</div>
+                <div class="compare-provider">${r.provider.emoji} ${r.provider.name}</div>
+                <div class="compare-emission">${r.emissions.toFixed(2)}g</div>
+                <div class="compare-label">CO₂/request</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================
+// SHARE MODAL
+// ============================================
+function toggleShare() {
+    const modal = document.getElementById('share-modal');
+    modal.classList.toggle('hidden');
+
+    if (!modal.classList.contains('hidden') && currentResult) {
+        updateShareCard();
+    }
+}
+
+function updateShareCard() {
+    if (!currentResult) return;
+
+    const { emissions, model, datacenter } = currentResult;
+
+    // Update share card content
+    document.getElementById('share-value').textContent = `${emissions.toFixed(2)}g`;
+    document.getElementById('share-model').textContent = model.name;
+
+    // Grade
+    let grade;
+    if (emissions < 0.05) grade = 'A+';
+    else if (emissions < 0.1) grade = 'A';
+    else if (emissions < 0.2) grade = 'B';
+    else if (emissions < 0.3) grade = 'C';
+    else grade = 'D';
+    document.getElementById('share-grade').textContent = grade;
+
+    // Calculate percentile (simulated based on emissions)
+    // Lower emissions = better percentile
+    const percentile = Math.max(1, Math.min(99, Math.round(100 - (emissions / 0.5 * 50))));
+    document.getElementById('share-comparison').textContent =
+        `Cleaner than ${percentile}% of AI setups`;
+}
+
+function copyShareLink() {
+    if (!currentResult) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('e', currentResult.emissions.toFixed(3));
+    url.searchParams.set('m', currentResult.model.id);
+
+    navigator.clipboard.writeText(url.toString()).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = originalText, 2000);
+    });
+}
+
+function downloadShareCard() {
+    // Create a simple text-based share (could be enhanced with canvas)
+    const { emissions, model } = currentResult;
+    const text = `🌍 My AI Carbon Footprint\n\n${emissions.toFixed(2)}g CO₂ per request\nUsing: ${model.name}\n\nCalculate yours at: ${window.location.origin}`;
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'green-ai-footprint.txt';
+    a.click();
+    URL.revokeObjectURL(url);
 }

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/style.css?v=20260121e">
+    <link rel="stylesheet" href="/static/style.css?v=20260121-10x">
 </head>
 <body>
     <!-- Skip link for keyboard navigation -->
@@ -21,8 +21,18 @@
                 <h1>🌍 Green AI</h1>
             </div>
             <div class="header-right">
-                <button class="settings-btn" onclick="toggleSettings()" title="Settings">⚙️</button>
-                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                <button class="icon-btn" onclick="toggleCompareMode()" title="Compare models" id="compare-btn">
+                    <span>⚖️</span>
+                </button>
+                <button class="icon-btn" onclick="toggleLeaderboard()" title="Datacenter leaderboard" id="leaderboard-btn">
+                    <span>🏆</span>
+                </button>
+                <button class="icon-btn" onclick="toggleSettings()" title="Settings">
+                    <span>⚙️</span>
+                </button>
+                <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">
+                    <span>🌙</span>
+                </button>
                 <a href="/docs" class="header-link">API</a>
             </div>
         </header>
@@ -44,6 +54,92 @@
                         <p><strong>With detection:</strong> Makes a real API call (~$0.00001) to detect actual datacenter</p>
                         <p><strong>Without:</strong> Estimates based on the closest datacenter to you</p>
                         <p><strong>Limit:</strong> 3 detections per session to keep costs minimal</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Modal -->
+        <div class="modal hidden" id="leaderboard-modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3>🏆 Datacenter Leaderboard</h3>
+                    <button class="modal-close" onclick="toggleLeaderboard()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="leaderboard-filters">
+                        <button class="filter-btn active" data-filter="all" onclick="filterLeaderboard('all')">All</button>
+                        <button class="filter-btn" data-filter="aws" onclick="filterLeaderboard('aws')">AWS</button>
+                        <button class="filter-btn" data-filter="gcp" onclick="filterLeaderboard('gcp')">GCP</button>
+                        <button class="filter-btn" data-filter="azure" onclick="filterLeaderboard('azure')">Azure</button>
+                    </div>
+                    <div class="leaderboard-table" id="leaderboard-table">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compare Modal -->
+        <div class="modal hidden" id="compare-modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3>⚖️ Compare Models</h3>
+                    <button class="modal-close" onclick="toggleCompareMode()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="compare-hint">Select 2-3 models to compare their carbon footprint</p>
+                    <div class="compare-selectors">
+                        <div class="compare-slot" id="compare-slot-1">
+                            <select class="compare-select" id="compare-select-1" onchange="updateComparison()">
+                                <option value="">Select model...</option>
+                            </select>
+                        </div>
+                        <span class="compare-vs">vs</span>
+                        <div class="compare-slot" id="compare-slot-2">
+                            <select class="compare-select" id="compare-select-2" onchange="updateComparison()">
+                                <option value="">Select model...</option>
+                            </select>
+                        </div>
+                        <span class="compare-vs">vs</span>
+                        <div class="compare-slot" id="compare-slot-3">
+                            <select class="compare-select" id="compare-select-3" onchange="updateComparison()">
+                                <option value="">(Optional)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="compare-results hidden" id="compare-results">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Modal -->
+        <div class="modal hidden" id="share-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📤 Share Your Results</h3>
+                    <button class="modal-close" onclick="toggleShare()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="share-card" id="share-card">
+                        <div class="share-card-header">
+                            <span class="share-logo">🌍 Green AI</span>
+                            <span class="share-grade" id="share-grade">A</span>
+                        </div>
+                        <div class="share-card-body">
+                            <div class="share-value" id="share-value">0.08g</div>
+                            <div class="share-label">CO₂ per request</div>
+                            <div class="share-model" id="share-model">Claude Sonnet 4</div>
+                        </div>
+                        <div class="share-card-footer">
+                            <span id="share-comparison">Cleaner than 73% of AI setups</span>
+                        </div>
+                    </div>
+                    <div class="share-buttons">
+                        <button class="btn btn-primary" onclick="copyShareLink()">📋 Copy Link</button>
+                        <button class="btn btn-secondary" onclick="downloadShareCard()">📥 Download Image</button>
                     </div>
                 </div>
             </div>
@@ -133,59 +229,187 @@
 
                 <!-- Results (shown after reveal) -->
                 <div class="result-panel hidden" id="result-panel">
-                    <div class="result-hero">
-                        <span class="result-value" id="result-value">0.08</span>
-                        <span class="result-unit">g CO₂ per request</span>
+                    <!-- Carbon Gauge -->
+                    <div class="carbon-gauge-container">
+                        <div class="carbon-gauge" id="carbon-gauge">
+                            <svg viewBox="0 0 200 120" class="gauge-svg">
+                                <!-- Background arc -->
+                                <path d="M 20 100 A 80 80 0 0 1 180 100"
+                                      fill="none"
+                                      stroke="var(--surface3)"
+                                      stroke-width="12"
+                                      stroke-linecap="round"/>
+                                <!-- Colored segments -->
+                                <path d="M 20 100 A 80 80 0 0 1 60 35"
+                                      fill="none"
+                                      stroke="var(--green)"
+                                      stroke-width="12"
+                                      stroke-linecap="round"
+                                      class="gauge-segment"/>
+                                <path d="M 60 35 A 80 80 0 0 1 100 20"
+                                      fill="none"
+                                      stroke="var(--yellow)"
+                                      stroke-width="12"
+                                      class="gauge-segment"/>
+                                <path d="M 100 20 A 80 80 0 0 1 140 35"
+                                      fill="none"
+                                      stroke="var(--orange)"
+                                      stroke-width="12"
+                                      class="gauge-segment"/>
+                                <path d="M 140 35 A 80 80 0 0 1 180 100"
+                                      fill="none"
+                                      stroke="var(--red)"
+                                      stroke-width="12"
+                                      stroke-linecap="round"
+                                      class="gauge-segment"/>
+                                <!-- Needle -->
+                                <line x1="100" y1="100" x2="100" y2="30"
+                                      stroke="var(--text)"
+                                      stroke-width="3"
+                                      stroke-linecap="round"
+                                      class="gauge-needle"
+                                      id="gauge-needle"/>
+                                <!-- Center dot -->
+                                <circle cx="100" cy="100" r="8" fill="var(--text)"/>
+                            </svg>
+                            <div class="gauge-labels">
+                                <span class="gauge-label green">Clean</span>
+                                <span class="gauge-label red">Dirty</span>
+                            </div>
+                        </div>
+                        <div class="carbon-grade" id="carbon-grade">A</div>
                     </div>
-                    <p class="result-quip" id="result-quip">"About the mass of a raindrop. Not terrible!"</p>
-                    <p class="result-source" id="result-source">source: USGS water science</p>
 
+                    <!-- Animated Counter -->
+                    <div class="result-hero">
+                        <div class="result-counter">
+                            <span class="result-value counting" id="result-value">0.00</span>
+                            <span class="result-unit">g CO₂</span>
+                        </div>
+                        <span class="result-per">per request</span>
+                    </div>
+
+                    <!-- Visual Comparison Cards -->
+                    <div class="comparison-cards" id="comparison-cards">
+                        <div class="comparison-card">
+                            <div class="comparison-icon">🌧️</div>
+                            <div class="comparison-text">
+                                <span class="comparison-value" id="comp-raindrop">1.6</span>
+                                <span class="comparison-label">raindrops</span>
+                            </div>
+                        </div>
+                        <div class="comparison-card">
+                            <div class="comparison-icon">🔍</div>
+                            <div class="comparison-text">
+                                <span class="comparison-value" id="comp-search">0.4</span>
+                                <span class="comparison-label">Google searches</span>
+                            </div>
+                        </div>
+                        <div class="comparison-card">
+                            <div class="comparison-icon">😮‍💨</div>
+                            <div class="comparison-text">
+                                <span class="comparison-value" id="comp-breath">0.4</span>
+                                <span class="comparison-label">human breaths</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Journey Map -->
+                    <div class="journey-map" id="journey-map">
+                        <div class="journey-step">
+                            <div class="journey-icon">💭</div>
+                            <div class="journey-label">Your prompt</div>
+                        </div>
+                        <div class="journey-arrow">→</div>
+                        <div class="journey-step">
+                            <div class="journey-icon">🌐</div>
+                            <div class="journey-label" id="journey-distance">5,000km</div>
+                        </div>
+                        <div class="journey-arrow">→</div>
+                        <div class="journey-step">
+                            <div class="journey-icon">🏢</div>
+                            <div class="journey-label" id="journey-dc">Oregon DC</div>
+                        </div>
+                        <div class="journey-arrow">→</div>
+                        <div class="journey-step">
+                            <div class="journey-icon">⚡</div>
+                            <div class="journey-label" id="journey-grid">120g/kWh</div>
+                        </div>
+                        <div class="journey-arrow">→</div>
+                        <div class="journey-step final">
+                            <div class="journey-icon">🌿</div>
+                            <div class="journey-label" id="journey-co2">0.08g CO₂</div>
+                        </div>
+                    </div>
+
+                    <!-- Result Details -->
                     <div class="result-details">
-                        <div class="detail-item">
+                        <div class="detail-item" data-tooltip="Carbon intensity of the power grid">
                             <span class="detail-label">Grid intensity</span>
                             <span class="detail-value" id="detail-grid">120 g/kWh</span>
                         </div>
-                        <div class="detail-item">
+                        <div class="detail-item" data-tooltip="Datacenter location serving your request">
                             <span class="detail-label">Region</span>
                             <span class="detail-value" id="detail-region">Oregon</span>
                         </div>
-                        <div class="detail-item">
+                        <div class="detail-item" data-tooltip="Percentage of renewable energy in the grid">
                             <span class="detail-label">Renewables</span>
                             <span class="detail-value" id="detail-renewable">75%</span>
                         </div>
                     </div>
 
-                    <div class="plot-twist" id="plot-twist">
-                        <h4>💡 Plot twist</h4>
-                        <p id="twist-text">You're in Denmark but Claude runs in Oregon. That's 8,000km of electrons. The internet is just spicy wires.</p>
+                    <!-- Usage Slider -->
+                    <div class="usage-slider-section">
+                        <label class="slider-label">📊 Scale it up: How many requests per day?</label>
+                        <div class="slider-container">
+                            <input type="range" min="1" max="1000" value="10" class="usage-slider" id="usage-slider" oninput="updateScale(this.value)">
+                            <div class="slider-value" id="slider-value">10</div>
+                        </div>
+                        <div class="scale-grid" id="scale-grid">
+                            <div class="scale-card">
+                                <span class="scale-period">Daily</span>
+                                <span class="scale-amount" id="scale-daily">0.8g</span>
+                            </div>
+                            <div class="scale-card">
+                                <span class="scale-period">Monthly</span>
+                                <span class="scale-amount" id="scale-monthly">24g</span>
+                            </div>
+                            <div class="scale-card">
+                                <span class="scale-period">Yearly</span>
+                                <span class="scale-amount" id="scale-yearly">292g</span>
+                            </div>
+                        </div>
+                        <p class="scale-equivalent" id="scale-equivalent">
+                            🚗 That's like driving <strong>1.2km</strong> per year
+                        </p>
                     </div>
 
-                    <div class="what-if hidden" id="what-if">
-                        <h4>🔄 What if?</h4>
-                        <p id="whatif-text">If Claude ran in Sweden: <strong>0.03g</strong> per request</p>
-                        <p class="whatif-saving" id="whatif-saving">You'd save 63% — "Mass of 2 ants vs a raindrop"</p>
-                    </div>
-
-                    <div class="at-scale">
-                        <h4>📊 At scale (1M requests/month)</h4>
-                        <div class="scale-compare">
-                            <div class="scale-item">
-                                <span class="scale-value" id="scale-now">40 kg</span>
-                                <span class="scale-label">Current</span>
+                    <!-- What-if Section -->
+                    <div class="what-if-section hidden" id="what-if">
+                        <h4>🔄 What if you switched regions?</h4>
+                        <div class="whatif-comparison">
+                            <div class="whatif-current">
+                                <span class="whatif-label">Current</span>
+                                <span class="whatif-value" id="whatif-current">0.08g</span>
+                                <span class="whatif-region" id="whatif-current-region">Oregon</span>
                             </div>
-                            <span class="scale-arrow">→</span>
-                            <div class="scale-item">
-                                <span class="scale-value green" id="scale-best">15 kg</span>
-                                <span class="scale-label">Best region</span>
+                            <div class="whatif-arrow">→</div>
+                            <div class="whatif-best">
+                                <span class="whatif-label">Best Option</span>
+                                <span class="whatif-value green" id="whatif-best">0.03g</span>
+                                <span class="whatif-region" id="whatif-best-region">Sweden</span>
                             </div>
-                            <div class="scale-saving">
-                                <span id="scale-saving-text">Save 25kg/month</span>
-                                <span class="scale-quip" id="scale-quip">"That's a small dog you're NOT emitting"</span>
+                            <div class="whatif-savings">
+                                <span class="whatif-savings-value" id="whatif-savings">-63%</span>
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn btn-secondary" onclick="resetCalculator()">↩ Start over</button>
+                    <!-- Action Buttons -->
+                    <div class="result-actions">
+                        <button class="btn btn-secondary" onclick="resetCalculator()">↩ Start over</button>
+                        <button class="btn btn-primary" onclick="toggleShare()">📤 Share</button>
+                    </div>
                 </div>
             </section>
 
@@ -267,6 +491,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260121e"></script>
+    <script src="/static/app.js?v=20260121-10x"></script>
 </body>
 </html>
