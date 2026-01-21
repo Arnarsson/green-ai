@@ -785,12 +785,42 @@ async function showResults() {
             document.getElementById('map-panel').classList.add('visible');
             map.invalidateSize(); // Leaflet needs this after container resize
 
-            // Zoom to the datacenter being used
+            // Zoom to the datacenter being used and highlight it
             if (likelyDC.coords) {
-                map.setView(likelyDC.coords, 5, { animate: true });
+                map.setView(likelyDC.coords, 5, { animate: true, duration: 1 });
+                highlightDatacenter(likelyDC);
             }
         }, 50);
     }, 300);
+}
+
+// Highlight the selected datacenter on the map
+function highlightDatacenter(dc) {
+    // Remove previous highlights
+    markers.forEach(m => {
+        const el = m.marker.getElement();
+        if (el) {
+            const markerDiv = el.querySelector('.dc-marker');
+            if (markerDiv) markerDiv.classList.remove('selected');
+        }
+    });
+
+    // Find and highlight the matching marker
+    const match = markers.find(m =>
+        m.dc.region === dc.region && m.dc.provider === dc.provider
+    );
+
+    if (match) {
+        const el = match.marker.getElement();
+        if (el) {
+            const markerDiv = el.querySelector('.dc-marker');
+            if (markerDiv) markerDiv.classList.add('selected');
+        }
+        // Open the popup for the selected datacenter
+        match.marker.openPopup();
+        // Also show the details panel
+        showDcDetails(dc);
+    }
 }
 
 function updateResultPanel(result) {
@@ -1281,6 +1311,80 @@ function getIntensityRating(intensity) {
     if (intensity < 400) return 'D';
     if (intensity < 500) return 'E';
     return 'F';
+}
+
+// ============================================
+// DETAIL EXPLAINERS
+// ============================================
+const DETAIL_EXPLAINERS = {
+    grid: {
+        title: 'Grid Carbon Intensity',
+        content: `
+            <p><strong>What is it?</strong> Grid carbon intensity measures how much CO₂ is emitted per kilowatt-hour of electricity generated in a region. It's measured in grams of CO₂ per kWh (g/kWh).</p>
+            <p><strong>Why does it matter?</strong> The same AI computation uses the same amount of electricity everywhere, but the carbon impact varies dramatically based on how that electricity is generated.</p>
+            <div class="explainer-highlight">
+                <strong>Quick reference:</strong><br>
+                🟢 &lt;100 g/kWh = Very clean (nuclear, hydro, wind)<br>
+                🟡 100-300 g/kWh = Mixed grid<br>
+                🟠 300-500 g/kWh = Fossil-heavy<br>
+                🔴 &gt;500 g/kWh = Coal-dominated
+            </div>
+            <p><strong>Data source:</strong> <a href="https://ember-climate.org/" target="_blank">Ember Climate</a> provides real-time and historical carbon intensity data for power grids worldwide.</p>
+        `
+    },
+    region: {
+        title: 'Datacenter Region',
+        content: `
+            <p><strong>What is it?</strong> This is the physical location of the datacenter processing your AI request. Cloud providers (AWS, GCP, Azure) have datacenters distributed globally.</p>
+            <p><strong>How do we determine it?</strong> We estimate the likely datacenter based on:</p>
+            <ul style="margin: 8px 0 8px 20px; color: var(--muted);">
+                <li>Your geographic location (closest datacenter reduces latency)</li>
+                <li>The AI provider's infrastructure (e.g., Anthropic uses AWS/GCP)</li>
+                <li>Known routing patterns for major providers</li>
+            </ul>
+            <div class="explainer-highlight">
+                <strong>Note:</strong> This is an estimate. Actual routing may vary based on load balancing, server availability, and provider decisions we can't observe.
+            </div>
+            <p><strong>Why it matters:</strong> Different regions have vastly different carbon intensities. Sweden (45g/kWh) vs India (650g/kWh) means a 14x difference in carbon footprint for the same computation!</p>
+        `
+    },
+    renewable: {
+        title: 'Renewable Energy Percentage',
+        content: `
+            <p><strong>What is it?</strong> The percentage of electricity in this region's grid that comes from renewable sources like solar, wind, hydro, and geothermal.</p>
+            <p><strong>Key insight:</strong> Higher renewable percentage generally correlates with lower carbon intensity, but not always:</p>
+            <ul style="margin: 8px 0 8px 20px; color: var(--muted);">
+                <li>🇫🇷 France: ~75% nuclear (very low carbon, but not "renewable")</li>
+                <li>🇳🇴 Norway: ~95% hydro (renewable AND low carbon)</li>
+                <li>🇩🇪 Germany: ~50% renewables (but still uses coal backup)</li>
+            </ul>
+            <div class="explainer-highlight">
+                <strong>Corporate claims vs reality:</strong> Many cloud providers claim "100% renewable" but this often means buying RECs (Renewable Energy Certificates) rather than actually using renewable power 24/7. The grid intensity we show reflects actual power generation, not accounting tricks.
+            </div>
+            <p><strong>Data sources:</strong> <a href="https://www.iea.org/" target="_blank">International Energy Agency (IEA)</a> and regional grid operators.</p>
+        `
+    }
+};
+
+function showDetailExplainer(type) {
+    const explainer = document.getElementById('detail-explainer');
+    const title = document.getElementById('explainer-title');
+    const content = document.getElementById('explainer-content');
+
+    const data = DETAIL_EXPLAINERS[type];
+    if (!data) return;
+
+    title.textContent = data.title;
+    content.innerHTML = data.content;
+    explainer.classList.remove('hidden');
+
+    // Smooth scroll to explainer
+    explainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideDetailExplainer() {
+    const explainer = document.getElementById('detail-explainer');
+    explainer.classList.add('hidden');
 }
 
 // ============================================

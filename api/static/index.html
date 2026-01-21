@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/style.css?v=20260121-hero">
+    <link rel="stylesheet" href="/static/style.css?v=20260121-mapfix">
 </head>
 <body>
     <!-- Skip link for keyboard navigation -->
@@ -443,17 +443,28 @@
 
                     <!-- Result Details -->
                     <div class="result-details">
-                        <div class="detail-item" data-tooltip="Carbon intensity of the power grid">
-                            <span class="detail-label">Grid intensity</span>
+                        <div class="detail-item clickable" data-tooltip="Click for more info" onclick="showDetailExplainer('grid')">
+                            <span class="detail-label">Grid intensity <span class="info-icon">i</span></span>
                             <span class="detail-value" id="detail-grid">120 g/kWh</span>
                         </div>
-                        <div class="detail-item" data-tooltip="Datacenter location serving your request">
-                            <span class="detail-label">Region</span>
+                        <div class="detail-item clickable" data-tooltip="Click for more info" onclick="showDetailExplainer('region')">
+                            <span class="detail-label">Region <span class="info-icon">i</span></span>
                             <span class="detail-value" id="detail-region">Oregon</span>
                         </div>
-                        <div class="detail-item" data-tooltip="Percentage of renewable energy in the grid">
-                            <span class="detail-label">Renewables</span>
+                        <div class="detail-item clickable" data-tooltip="Click for more info" onclick="showDetailExplainer('renewable')">
+                            <span class="detail-label">Renewables <span class="info-icon">i</span></span>
                             <span class="detail-value" id="detail-renewable">75%</span>
+                        </div>
+                    </div>
+
+                    <!-- Detail Explainer (hidden by default) -->
+                    <div class="detail-explainer hidden" id="detail-explainer">
+                        <div class="explainer-header">
+                            <span class="explainer-title" id="explainer-title">Grid Intensity</span>
+                            <button class="explainer-close" onclick="hideDetailExplainer()">&times;</button>
+                        </div>
+                        <div class="explainer-content" id="explainer-content">
+                            <!-- Content populated by JS -->
                         </div>
                     </div>
 
@@ -626,6 +637,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260121-hero"></script>
+    <script src="/static/app.js?v=20260121-mapfix"></script>
 </body>
 </html>
