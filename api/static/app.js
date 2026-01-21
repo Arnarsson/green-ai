@@ -561,19 +561,23 @@ async function detectLocation() {
         let errorMsg = 'Location failed';
         if (error.code === 1) {
             errorMsg = '❌ Permission denied';
-            showError('Location permission denied. Please enable location access or use the dropdown.');
+            showError('Location blocked. Use a quick pick button below instead!');
         } else if (error.code === 2) {
             errorMsg = '❌ Unavailable';
-            showError('Location unavailable. Please check your device settings or use the dropdown.');
+            showError('Location unavailable. Use a quick pick button below!');
         } else if (error.code === 3) {
             errorMsg = '❌ Timeout';
-            showError('Location request timed out. Please try again or use the dropdown.');
+            showError('Location timed out. Use a quick pick button below!');
         } else {
             errorMsg = '❌ Failed';
-            showError('Could not detect location. Please use the dropdown instead.');
+            showError('Location failed. Use a quick pick button below!');
         }
 
         btn.textContent = errorMsg;
+
+        // Highlight the quick pick alternatives
+        highlightQuickPicks();
+
         setTimeout(() => {
             btn.textContent = originalText;
             btn.disabled = false;
@@ -583,6 +587,20 @@ async function detectLocation() {
 
     btn.textContent = originalText;
     btn.disabled = false;
+}
+
+// Highlight quick pick buttons when location fails
+function highlightQuickPicks() {
+    const suggestions = document.querySelector('.country-suggestions');
+    if (suggestions) {
+        suggestions.classList.add('highlighted');
+        suggestions.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Remove highlight after a few seconds
+        setTimeout(() => {
+            suggestions.classList.remove('highlighted');
+        }, 4000);
+    }
 }
 
 function selectCountry(countryCode) {
