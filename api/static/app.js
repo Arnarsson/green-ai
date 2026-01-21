@@ -32,8 +32,8 @@ const PROVIDERS = {
         defaultIntensity: 120
     },
     google: {
-        name: 'Google AI',
-        emoji: '🔮',
+        name: 'Gemini',
+        emoji: '✨',
         clouds: ['gcp'],
         defaultRegion: 'us-central1',
         defaultIntensity: 450
