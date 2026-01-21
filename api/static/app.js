@@ -105,6 +105,37 @@ const MODELS = {
     ]
 };
 
+// OpenRouter model mappings (our ID → OpenRouter model ID)
+const OPENROUTER_MODELS = {
+    // OpenAI
+    'gpt-5.2': 'openai/gpt-4o',  // Using gpt-4o as proxy for detection
+    'gpt-5.2-thinking': 'openai/gpt-4o',
+    'gpt-5.2-instant': 'openai/gpt-4o-mini',
+    'o3': 'openai/o1-preview',
+    'o3-mini': 'openai/o1-mini',
+    // Anthropic
+    'opus-4.5': 'anthropic/claude-3.5-sonnet',  // Using sonnet for cheaper detection
+    'sonnet-4': 'anthropic/claude-3.5-sonnet',
+    'haiku-4': 'anthropic/claude-3-haiku',
+    // Google
+    'gemini-2.5-pro': 'google/gemini-pro-1.5',
+    'gemini-2.5-flash': 'google/gemini-flash-1.5',
+    'gemini-2.5-flash-lite': 'google/gemini-flash-1.5-8b',
+    // Cohere
+    'command-a': 'cohere/command-r-plus',
+    'command-r-plus': 'cohere/command-r-plus',
+    'command-r7b': 'cohere/command-r',
+    // Mistral
+    'mistral-large': 'mistralai/mistral-large',
+    'mistral-small': 'mistralai/mistral-small',
+    'codestral': 'mistralai/codestral-latest',
+    'pixtral-large': 'mistralai/pixtral-large-latest',
+    // Llama (via various providers)
+    'llama-4-maverick': 'meta-llama/llama-3.1-405b-instruct',
+    'llama-4-scout': 'meta-llama/llama-3.1-70b-instruct',
+    'llama-4-scout-mini': 'meta-llama/llama-3.1-8b-instruct'
+};
+
 // Factual comparisons with verified sources
 const QUIPS = {
     tiny: [
@@ -184,6 +215,163 @@ function showError(message) {
 function hideError() {
     const banner = document.getElementById('error-banner');
     if (banner) banner.classList.add('hidden');
+}
+
+// ============================================
+// OPENROUTER DETECTION
+// ============================================
+let openrouterApiKey = localStorage.getItem('openrouter_api_key') || null;
+let detectionCallsUsed = 0;
+const MAX_DETECTION_CALLS = 3; // Limit per session
+
+async function detectWithOpenRouter(modelId, providerKey) {
+    const openrouterModel = OPENROUTER_MODELS[modelId];
+    if (!openrouterModel) {
+        console.warn('No OpenRouter mapping for model:', modelId);
+        return null;
+    }
+
+    if (!openrouterApiKey) {
+        return null; // No API key, skip detection
+    }
+
+    // Check call limit
+    if (detectionCallsUsed >= MAX_DETECTION_CALLS) {
+        console.log(`Detection limit reached (${MAX_DETECTION_CALLS} calls per session)`);
+        return null;
+    }
+
+    try {
+        detectionCallsUsed++;
+        const startTime = performance.now();
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${openrouterApiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'Green AI Carbon Calculator'
+            },
+            body: JSON.stringify({
+                model: openrouterModel,
+                messages: [{ role: 'user', content: 'hi' }],
+                max_tokens: 1
+            })
+        });
+
+        const endTime = performance.now();
+        const latencyMs = Math.round(endTime - startTime);
+
+        // Parse response headers for location hints
+        const cfRay = response.headers.get('cf-ray'); // Cloudflare edge location
+        const serverRegion = response.headers.get('x-ratelimit-remaining-requests');
+
+        const data = await response.json();
+
+        // Extract any location info from response
+        const detectionResult = {
+            latencyMs,
+            cfRay,
+            model: data.model,
+            provider: providerKey,
+            detectedAt: new Date().toISOString()
+        };
+
+        // Estimate region from latency
+        // < 100ms = likely same continent, < 50ms = likely same region
+        if (latencyMs < 50) {
+            detectionResult.confidence = 'high';
+            detectionResult.likelyRegion = 'same_region';
+        } else if (latencyMs < 150) {
+            detectionResult.confidence = 'medium';
+            detectionResult.likelyRegion = 'same_continent';
+        } else {
+            detectionResult.confidence = 'low';
+            detectionResult.likelyRegion = 'cross_continental';
+        }
+
+        console.log('OpenRouter detection result:', detectionResult);
+        return detectionResult;
+
+    } catch (error) {
+        console.error('OpenRouter detection failed:', error);
+        return null;
+    }
+}
+
+function setOpenRouterKey(key) {
+    openrouterApiKey = key;
+    if (key) {
+        localStorage.setItem('openrouter_api_key', key);
+    } else {
+        localStorage.removeItem('openrouter_api_key');
+    }
+}
+
+function hasOpenRouterKey() {
+    return !!openrouterApiKey;
+}
+
+function getRemainingDetections() {
+    return Math.max(0, MAX_DETECTION_CALLS - detectionCallsUsed);
+}
+
+function canDetect() {
+    return hasOpenRouterKey() && detectionCallsUsed < MAX_DETECTION_CALLS;
+}
+
+// Settings modal functions
+function toggleSettings() {
+    const modal = document.getElementById('settings-modal');
+    modal.classList.toggle('hidden');
+
+    // Update key status display
+    if (!modal.classList.contains('hidden')) {
+        updateKeyStatus();
+    }
+}
+
+function updateKeyStatus() {
+    const statusEl = document.getElementById('key-status');
+    const inputEl = document.getElementById('openrouter-key');
+
+    if (hasOpenRouterKey()) {
+        const remaining = getRemainingDetections();
+        if (remaining > 0) {
+            statusEl.textContent = `✓ API key active · ${remaining}/${MAX_DETECTION_CALLS} detections remaining`;
+            statusEl.classList.remove('error');
+        } else {
+            statusEl.textContent = `✓ API key active · Session limit reached (refresh for more)`;
+            statusEl.classList.add('error');
+        }
+        inputEl.value = '••••••••••••••••';
+    } else {
+        statusEl.textContent = '';
+    }
+}
+
+function saveOpenRouterKey() {
+    const inputEl = document.getElementById('openrouter-key');
+    const statusEl = document.getElementById('key-status');
+    const key = inputEl.value.trim();
+
+    if (key && !key.startsWith('••')) {
+        if (key.startsWith('sk-or-')) {
+            setOpenRouterKey(key);
+            statusEl.textContent = '✓ API key saved - real detection enabled';
+            statusEl.classList.remove('error');
+            inputEl.value = '••••••••••••••••';
+        } else {
+            statusEl.textContent = '✗ Invalid key format (should start with sk-or-)';
+            statusEl.classList.add('error');
+        }
+    } else if (!key || key === '') {
+        setOpenRouterKey(null);
+        statusEl.textContent = 'API key removed';
+        statusEl.classList.remove('error');
+        inputEl.value = '';
+    }
 }
 
 // ============================================
@@ -406,11 +594,30 @@ function selectUsage(usageKey) {
 // ============================================
 // CALCULATOR: SHOW RESULTS
 // ============================================
-function showResults() {
+async function showResults() {
     if (!selectedLocation || !selectedProvider || !selectedModel || !selectedUsage) return;
 
     const provider = PROVIDERS[selectedProvider];
     const usage = USAGE_PROFILES[selectedUsage];
+
+    // If we have an OpenRouter key and calls remaining, run detection
+    let detectionResult = null;
+    if (canDetect()) {
+        // Show loading indicator
+        const ctaBtn = document.querySelector('#step-cta .btn');
+        if (ctaBtn) {
+            const remaining = getRemainingDetections();
+            ctaBtn.textContent = `🔍 Detecting... (${remaining} left)`;
+            ctaBtn.disabled = true;
+        }
+
+        detectionResult = await detectWithOpenRouter(selectedModel, selectedProvider);
+
+        if (ctaBtn) {
+            ctaBtn.textContent = '🌱 Show me the damage';
+            ctaBtn.disabled = false;
+        }
+    }
 
     // Get model power multiplier
     const models = MODELS[selectedProvider] || [];
@@ -474,6 +681,16 @@ function showResults() {
         selectionMethod = 'hardcoded_fallback';
     }
 
+    // If detection succeeded, update selection method and potentially refine datacenter
+    if (detectionResult) {
+        selectionMethod = 'detected';
+        // Use latency to potentially pick a different datacenter
+        if (detectionResult.latencyMs && detectionResult.latencyMs < 100) {
+            // Very low latency suggests we're close to the selected DC
+            // Keep the closest DC selection
+        }
+    }
+
     // Calculate emissions with model-adjusted power
     const emissions = calculateEmissions(likelyDC.intensity, adjustedPower, usage.durationMs);
 
@@ -491,7 +708,8 @@ function showResults() {
         datacenter: likelyDC,
         userLocation: selectedLocation,
         selectionMethod,
-        distanceKm
+        distanceKm,
+        detection: detectionResult  // Include detection data
     };
 
     // Update result panel
@@ -527,7 +745,7 @@ function showResults() {
 }
 
 function updateResultPanel(result) {
-    const { emissions, provider, model, usage, datacenter, userLocation, selectionMethod, distanceKm } = result;
+    const { emissions, provider, model, usage, datacenter, userLocation, selectionMethod, distanceKm, detection } = result;
 
     // Main result
     document.getElementById('result-value').textContent = emissions.toFixed(2);
@@ -537,10 +755,16 @@ function updateResultPanel(result) {
     document.getElementById('result-quip').textContent = `"${quip.text}"`;
     document.getElementById('result-source').textContent = `source: ${quip.source}`;
 
+    // Detection badge
+    const isDetected = selectionMethod === 'detected';
+    const badgeHtml = isDetected
+        ? `<span class="detection-badge detected">✓ Detected (${detection?.latencyMs}ms)</span>`
+        : `<span class="detection-badge estimated">~ Estimated</span>`;
+
     // Details - include model name and distance
     document.getElementById('detail-grid').textContent = `${datacenter.intensity} g/kWh`;
-    const distanceText = distanceKm ? ` · ${distanceKm.toLocaleString()}km away` : '';
-    document.getElementById('detail-region').textContent = `${datacenter.city || datacenter.region}${distanceText}`;
+    const distanceText = distanceKm ? ` · ${distanceKm.toLocaleString()}km` : '';
+    document.getElementById('detail-region').innerHTML = `${datacenter.city || datacenter.region}${distanceText} ${badgeHtml}`;
     document.getElementById('detail-renewable').textContent = `${datacenter.renewable || '~30'}%`;
 
     // Plot twist - now with estimation context

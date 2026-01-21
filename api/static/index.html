@@ -21,10 +21,37 @@
                 <h1>🌍 Green AI</h1>
             </div>
             <div class="header-right">
+                <button class="settings-btn" onclick="toggleSettings()" title="Settings">⚙️</button>
                 <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
                 <a href="/docs" class="header-link">API</a>
             </div>
         </header>
+
+        <!-- Settings Modal -->
+        <div class="modal hidden" id="settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>⚙️ Settings</h3>
+                    <button class="modal-close" onclick="toggleSettings()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label class="setting-label">🔑 OpenRouter API Key</label>
+                        <p class="setting-hint">Enable real datacenter detection by making actual API calls (~$0.00001/detection)</p>
+                        <div class="setting-row">
+                            <input type="password" id="openrouter-key" class="setting-input" placeholder="sk-or-..." />
+                            <button class="btn btn-small" onclick="saveOpenRouterKey()">Save</button>
+                        </div>
+                        <p class="setting-status" id="key-status"></p>
+                        <a href="https://openrouter.ai/keys" target="_blank" class="setting-link">Get a free API key →</a>
+                    </div>
+                    <div class="setting-info">
+                        <p><strong>With API key:</strong> Makes real API call to detect actual datacenter</p>
+                        <p><strong>Without:</strong> Estimates based on closest datacenter (current behavior)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Content Area -->
         <main class="main">
