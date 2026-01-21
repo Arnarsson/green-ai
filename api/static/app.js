@@ -422,20 +422,43 @@ function showResults() {
         provider.clouds.includes(dc.provider)
     );
 
-    // Smart datacenter selection: prefer same continent as user, then default region
+    // Smart datacenter selection: find the CLOSEST datacenter to the user
     const userContinent = getContinent(selectedLocation.code);
+    const userCoords = COUNTRY_COORDS[selectedLocation.code];
 
-    // First: try to find a datacenter on the same continent as the user
-    let likelyDC = providerDCs.find(dc => getContinent(dc.country) === userContinent);
+    let likelyDC = null;
+    let selectionMethod = 'default';
 
-    // Second: fall back to provider's default region
+    if (userCoords) {
+        // Calculate distance to all datacenters on the same continent
+        const sameContinentDCs = providerDCs.filter(dc =>
+            getContinent(dc.country) === userContinent && dc.coords
+        );
+
+        if (sameContinentDCs.length > 0) {
+            // Find the closest one by actual distance
+            likelyDC = sameContinentDCs.reduce((closest, dc) => {
+                const dist = calculateDistance(userCoords[0], userCoords[1], dc.coords[0], dc.coords[1]);
+                dc._distance = dist;
+                if (!closest || dist < closest._distance) {
+                    return dc;
+                }
+                return closest;
+            }, null);
+            selectionMethod = 'closest';
+        }
+    }
+
+    // Fallback: provider's default region
     if (!likelyDC) {
         likelyDC = providerDCs.find(dc => dc.region === provider.defaultRegion);
+        selectionMethod = 'provider_default';
     }
 
     // Last resort: first available
     if (!likelyDC) {
         likelyDC = providerDCs[0];
+        selectionMethod = 'first_available';
     }
 
     if (!likelyDC) {
@@ -448,10 +471,16 @@ function showResults() {
             renewable: 30,
             coords: [37.4, -122.0] // Default to SF area
         };
+        selectionMethod = 'hardcoded_fallback';
     }
 
     // Calculate emissions with model-adjusted power
     const emissions = calculateEmissions(likelyDC.intensity, adjustedPower, usage.durationMs);
+
+    // Calculate distance to selected datacenter
+    const distanceKm = userCoords && likelyDC.coords
+        ? calculateDistance(userCoords[0], userCoords[1], likelyDC.coords[0], likelyDC.coords[1])
+        : null;
 
     currentResult = {
         emissions,
@@ -460,7 +489,9 @@ function showResults() {
         usage,
         adjustedPower,
         datacenter: likelyDC,
-        userLocation: selectedLocation
+        userLocation: selectedLocation,
+        selectionMethod,
+        distanceKm
     };
 
     // Update result panel
@@ -496,7 +527,7 @@ function showResults() {
 }
 
 function updateResultPanel(result) {
-    const { emissions, provider, model, usage, datacenter, userLocation } = result;
+    const { emissions, provider, model, usage, datacenter, userLocation, selectionMethod, distanceKm } = result;
 
     // Main result
     document.getElementById('result-value').textContent = emissions.toFixed(2);
@@ -506,13 +537,14 @@ function updateResultPanel(result) {
     document.getElementById('result-quip').textContent = `"${quip.text}"`;
     document.getElementById('result-source').textContent = `source: ${quip.source}`;
 
-    // Details - include model name
+    // Details - include model name and distance
     document.getElementById('detail-grid').textContent = `${datacenter.intensity} g/kWh`;
-    document.getElementById('detail-region').textContent = `${datacenter.city || datacenter.region} (${model?.name || provider.name})`;
+    const distanceText = distanceKm ? ` · ${distanceKm.toLocaleString()}km away` : '';
+    document.getElementById('detail-region').textContent = `${datacenter.city || datacenter.region}${distanceText}`;
     document.getElementById('detail-renewable').textContent = `${datacenter.renewable || '~30'}%`;
 
-    // Plot twist
-    const twist = generatePlotTwist(userLocation, datacenter, provider);
+    // Plot twist - now with estimation context
+    const twist = generatePlotTwist(userLocation, datacenter, provider, selectionMethod, distanceKm);
     document.getElementById('twist-text').textContent = twist;
 
     // What-if section
@@ -533,12 +565,17 @@ function getQuip(emissionsG) {
     return quip; // Returns { text, source }
 }
 
-function generatePlotTwist(userLocation, datacenter, provider) {
+function generatePlotTwist(userLocation, datacenter, provider, selectionMethod, distanceKm) {
     const userContinent = getContinent(userLocation.code);
     const dcContinent = getContinent(datacenter.country);
 
+    // Add estimation disclaimer based on selection method
+    const methodNote = selectionMethod === 'closest'
+        ? `We're estimating ${provider.name} routes you to their nearest ${datacenter.provider.toUpperCase()} datacenter.`
+        : `This is our best guess — ${provider.name} doesn't publish routing details.`;
+
     if (userContinent !== dcContinent) {
-        const distance = estimateDistance(userLocation.code, datacenter);
+        const distance = distanceKm || estimateDistance(userLocation.code, datacenter);
         return PLOT_TWISTS.far_datacenter
             .replace('{user_country}', userLocation.name)
             .replace('{provider}', provider.name)
@@ -547,21 +584,23 @@ function generatePlotTwist(userLocation, datacenter, provider) {
     }
 
     if (datacenter.renewable && datacenter.renewable > 70) {
-        return PLOT_TWISTS.clean_grid
-            .replace('{dc_location}', datacenter.city || datacenter.region)
-            .replace('{renewable}', datacenter.renewable);
+        return `${methodNote} Good news: ${datacenter.city || datacenter.region} runs on ${datacenter.renewable}% renewables!`;
     }
 
     if (datacenter.intensity > 400) {
-        return PLOT_TWISTS.dirty_grid
-            .replace('{dc_location}', datacenter.city || datacenter.region);
+        return `${methodNote} Bad news: ${datacenter.city || datacenter.region} still relies heavily on fossil fuels.`;
     }
 
     if (['GB', 'DE', 'FR', 'NL', 'IE'].includes(userLocation.code) && datacenter.country === 'US') {
-        return PLOT_TWISTS.eu_user_us_dc;
+        return `${methodNote} Your request is crossing the Atlantic — EU privacy folks are sweating.`;
     }
 
-    return PLOT_TWISTS.same_continent;
+    // Default: show selection method with distance
+    if (distanceKm && distanceKm < 1000) {
+        return `${methodNote} At just ${distanceKm.toLocaleString()}km away, latency should be snappy.`;
+    }
+
+    return `${methodNote} ${datacenter.city || datacenter.region} is ${distanceKm ? distanceKm.toLocaleString() + 'km from you' : 'your likely datacenter'}.`;
 }
 
 function getContinent(countryCode) {
