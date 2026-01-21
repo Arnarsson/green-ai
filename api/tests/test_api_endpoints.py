@@ -38,23 +38,21 @@ class TestHealthEndpoint:
 class TestRootEndpoint:
     """Tests for / root endpoint."""
 
-    def test_root_returns_welcome(self, client):
-        """Test root endpoint returns welcome message."""
+    def test_root_returns_html(self, client):
+        """Test root endpoint returns the HTML frontend."""
         response = client.get("/")
 
         assert response.status_code == 200
-        data = response.json()
-        assert "message" in data
-        assert "Green AI" in data["message"]
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "Green AI" in response.text
 
-    def test_root_lists_endpoints(self, client):
-        """Test root endpoint lists available endpoints."""
+    def test_root_contains_calculator(self, client):
+        """Test root endpoint HTML contains calculator elements."""
         response = client.get("/")
 
-        data = response.json()
-        assert "endpoints" in data
-        assert "estimate" in data["endpoints"]
-        assert "detect_and_estimate" in data["endpoints"]
+        assert "country-select" in response.text
+        assert "provider-grid" in response.text
+        assert "model-grid" in response.text
 
 
 class TestEstimateEndpoint:

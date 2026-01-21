@@ -10,7 +10,6 @@ Phase 1 (MVP): ~70% accuracy using:
 Phase 2: Will add ML and advanced techniques for 85%+ accuracy
 """
 
-import asyncio
 import logging
 import socket
 from datetime import datetime, timedelta

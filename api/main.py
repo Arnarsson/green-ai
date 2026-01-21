@@ -120,6 +120,7 @@ async def dashboard():
 async def dashboard_redirect():
     """Redirect old dashboard URL to root"""
     from fastapi.responses import RedirectResponse
+
     return RedirectResponse(url="/", status_code=301)
 
 
