@@ -58,6 +58,49 @@ const PROVIDERS = {
         clouds: ['aws', 'azure', 'gcp'],
         defaultRegion: 'varies',
         defaultIntensity: 350
+    },
+    xai: {
+        name: 'xAI (Grok)',
+        emoji: '🚀',
+        clouds: ['aws', 'gcp'],
+        defaultRegion: 'us-west-2',
+        defaultIntensity: 350
+    },
+    deepseek: {
+        name: 'DeepSeek',
+        emoji: '🔍',
+        clouds: ['aws'],
+        defaultRegion: 'us-east-1',
+        defaultIntensity: 400
+    },
+    perplexity: {
+        name: 'Perplexity',
+        emoji: '🌐',
+        clouds: ['aws', 'gcp'],
+        defaultRegion: 'us-west-2',
+        defaultIntensity: 350
+    },
+    amazon: {
+        name: 'Amazon Bedrock',
+        emoji: '📦',
+        clouds: ['aws'],
+        defaultRegion: 'us-east-1',
+        defaultIntensity: 380
+    },
+    azure: {
+        name: 'Azure OpenAI',
+        emoji: '☁️',
+        clouds: ['azure'],
+        defaultRegion: 'eastus',
+        defaultIntensity: 370
+    },
+    other: {
+        name: 'Other',
+        emoji: '➕',
+        clouds: ['aws', 'gcp', 'azure'],
+        defaultRegion: 'us-east-1',
+        defaultIntensity: 400,
+        isOther: true
     }
 };
 
@@ -102,6 +145,36 @@ const MODELS = {
         { id: 'llama-4-maverick', name: 'Llama 4 Maverick', size: '400B MoE', powerMultiplier: 2.0 },
         { id: 'llama-4-scout', name: 'Llama 4 Scout', size: '109B MoE', powerMultiplier: 0.8 },
         { id: 'llama-4-scout-mini', name: 'Llama 4 Scout Mini', size: 'efficient', powerMultiplier: 0.3 }
+    ],
+    xai: [
+        { id: 'grok-3', name: 'Grok 3', size: 'flagship', powerMultiplier: 2.0 },
+        { id: 'grok-3-mini', name: 'Grok 3 Mini', size: 'fast', powerMultiplier: 0.6 },
+        { id: 'grok-vision', name: 'Grok Vision', size: 'multimodal', powerMultiplier: 1.5 }
+    ],
+    deepseek: [
+        { id: 'deepseek-v3', name: 'DeepSeek V3', size: '671B MoE', powerMultiplier: 1.8 },
+        { id: 'deepseek-r1', name: 'DeepSeek R1', size: 'reasoning', powerMultiplier: 2.5 },
+        { id: 'deepseek-coder', name: 'DeepSeek Coder', size: 'code specialist', powerMultiplier: 0.8 }
+    ],
+    perplexity: [
+        { id: 'sonar-large', name: 'Sonar Large', size: 'search-enhanced', powerMultiplier: 1.2 },
+        { id: 'sonar-small', name: 'Sonar Small', size: 'fast search', powerMultiplier: 0.5 },
+        { id: 'sonar-reasoning', name: 'Sonar Reasoning', size: 'deep search', powerMultiplier: 2.0 }
+    ],
+    amazon: [
+        { id: 'titan-text', name: 'Titan Text', size: 'general', powerMultiplier: 1.0 },
+        { id: 'titan-express', name: 'Titan Express', size: 'fast', powerMultiplier: 0.4 },
+        { id: 'nova-pro', name: 'Nova Pro', size: 'flagship', powerMultiplier: 1.5 }
+    ],
+    azure: [
+        { id: 'azure-gpt-4o', name: 'GPT-4o (Azure)', size: 'flagship', powerMultiplier: 1.5 },
+        { id: 'azure-gpt-4o-mini', name: 'GPT-4o Mini (Azure)', size: 'efficient', powerMultiplier: 0.4 },
+        { id: 'azure-o1', name: 'o1 (Azure)', size: 'reasoning', powerMultiplier: 3.5 }
+    ],
+    other: [
+        { id: 'other-small', name: 'Small model (~7B)', size: '~7B params', powerMultiplier: 0.2 },
+        { id: 'other-medium', name: 'Medium model (~70B)', size: '~70B params', powerMultiplier: 1.0 },
+        { id: 'other-large', name: 'Large model (~400B+)', size: '~400B+ params', powerMultiplier: 2.5 }
     ]
 };
 
@@ -522,6 +595,9 @@ function populateProviders() {
     Object.entries(PROVIDERS).forEach(([key, provider]) => {
         const btn = document.createElement('button');
         btn.className = 'provider-btn';
+        if (provider.isOther) {
+            btn.classList.add('other-provider');
+        }
         btn.dataset.provider = key;
         btn.onclick = () => selectProvider(key);
         btn.innerHTML = `
@@ -1260,6 +1336,9 @@ function getIntensityColor(intensity) {
 function showDcDetails(dc) {
     if (!currentResult) return;
 
+    // Track which datacenter is being viewed
+    viewedDatacenter = dc;
+
     const detailsEl = document.getElementById('dc-details');
     detailsEl.classList.remove('hidden');
 
@@ -1292,6 +1371,50 @@ function showDcDetails(dc) {
 
 function hideDcDetails() {
     document.getElementById('dc-details').classList.add('hidden');
+}
+
+// Track currently viewed datacenter for "use this region" feature
+let viewedDatacenter = null;
+
+function useSelectedDatacenter() {
+    if (!viewedDatacenter || !currentResult) return;
+
+    // Recalculate emissions with the new datacenter
+    const newDC = viewedDatacenter;
+    const { usage, adjustedPower, userLocation } = currentResult;
+
+    const newEmissions = calculateEmissions(newDC.intensity, adjustedPower, usage.durationMs);
+
+    // Calculate new distance
+    const userCoords = COUNTRY_COORDS[userLocation.code];
+    const newDistanceKm = userCoords && newDC.coords
+        ? calculateDistance(userCoords[0], userCoords[1], newDC.coords[0], newDC.coords[1])
+        : null;
+
+    // Update current result with new datacenter
+    currentResult.datacenter = newDC;
+    currentResult.emissions = newEmissions;
+    currentResult.distanceKm = newDistanceKm;
+    currentResult.selectionMethod = 'user_selected';
+
+    // Update the UI
+    updateResultPanel(currentResult);
+
+    // Highlight the new datacenter on the map
+    highlightDatacenter(newDC);
+
+    // Show a brief confirmation
+    const btn = document.getElementById('dc-use-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✓ Updated!';
+    btn.disabled = true;
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 1500);
+
+    // Scroll to results to show the update
+    document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function getDcQuip(dc) {

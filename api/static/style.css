@@ -643,6 +643,16 @@ details[open] .toggle-icon {
     color: var(--green);
 }
 
+.provider-btn.other-provider {
+    border-style: dashed;
+    opacity: 0.8;
+}
+
+.provider-btn.other-provider:hover {
+    opacity: 1;
+    border-style: solid;
+}
+
 .model-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -2204,6 +2214,13 @@ select:focus {
 
 .dc-saving.green { color: var(--green); }
 .dc-saving.red { color: var(--red); }
+
+.dc-use-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+}
 
 .leaflet-popup-content-wrapper {
     background: var(--surface) !important;
