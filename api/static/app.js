@@ -502,17 +502,44 @@ async function detectLocation() {
     btn.textContent = '📍 Detecting...';
     btn.disabled = true;
 
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+        btn.textContent = '❌ Not supported';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }, 2000);
+        showError('Geolocation is not supported by your browser. Please use the dropdown.');
+        return;
+    }
+
     try {
         const position = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
-                timeout: 10000,
-                enableHighAccuracy: false
+                timeout: 15000,  // Increased timeout for mobile
+                maximumAge: 300000,  // Accept cached position up to 5 min old
+                enableHighAccuracy: false  // Faster, uses network location
             });
         });
 
         // Reverse geocode to get country
         const { latitude, longitude } = position.coords;
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+
+        btn.textContent = '📍 Got location...';
+
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            {
+                headers: {
+                    'User-Agent': 'GreenAI-CarbonCalculator/1.0'  // Required by Nominatim
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('Geocoding service unavailable');
+        }
+
         const data = await response.json();
         const countryCode = data.address?.country_code?.toUpperCase();
 
@@ -529,11 +556,28 @@ async function detectLocation() {
         }
     } catch (error) {
         console.error('Geolocation failed:', error);
-        btn.textContent = '❌ Failed - try dropdown';
+
+        // Provide specific error messages
+        let errorMsg = 'Location failed';
+        if (error.code === 1) {
+            errorMsg = '❌ Permission denied';
+            showError('Location permission denied. Please enable location access or use the dropdown.');
+        } else if (error.code === 2) {
+            errorMsg = '❌ Unavailable';
+            showError('Location unavailable. Please check your device settings or use the dropdown.');
+        } else if (error.code === 3) {
+            errorMsg = '❌ Timeout';
+            showError('Location request timed out. Please try again or use the dropdown.');
+        } else {
+            errorMsg = '❌ Failed';
+            showError('Could not detect location. Please use the dropdown instead.');
+        }
+
+        btn.textContent = errorMsg;
         setTimeout(() => {
             btn.textContent = originalText;
             btn.disabled = false;
-        }, 2000);
+        }, 3000);
         return;
     }
 
