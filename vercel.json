@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/main.py", "use": "@vercel/python" },
+    { "src": "api/static/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/api/static/$1" },
+    { "src": "/v1/(.*)", "dest": "/api/main.py" },
+    { "src": "/health(.*)", "dest": "/api/main.py" },
+    { "src": "/metrics", "dest": "/api/main.py" },
+    { "src": "/docs(.*)", "dest": "/api/main.py" },
+    { "src": "/openapi.json", "dest": "/api/main.py" },
+    { "src": "^/$", "dest": "/api/static/index.html" },
+    { "src": "/(.*)", "dest": "/api/main.py" }
+  ]
+}

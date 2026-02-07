@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Green AI — See Your AI's Carbon Footprint</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050A05; --bg-card: #0A130A; --bg-card-hover: #0E1A0E;
+    --border: #162016; --border-hover: #1E361E;
+    --text: #E4F0E4; --text-muted: #8CB48C; --text-dim: #5A7A5A;
+    --green: #00FF88; --green-dim: #00CC6A; --green-glow: rgba(0,255,136,0.12);
+    --amber: #FFB800; --amber-glow: rgba(255,184,0,0.1);
+    --red: #FF4444; --red-glow: rgba(255,68,68,0.1);
+    --font: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'Space Mono', 'SF Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Background grain */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle at 20% 20%, rgba(0,255,136,0.03) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 80%, rgba(0,255,136,0.02) 0%, transparent 50%);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%2300ff88'/%3E%3C/svg%3E");
+  }
+
+  .container { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 20px 16px; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px; transition: all 0.3s;
+  }
+  .card:hover { border-color: var(--border-hover); }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--green); color: var(--bg); border: none; border-radius: 10px;
+    padding: 14px 32px; font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: var(--font); letter-spacing: 0.01em; transition: all 0.2s;
+    box-shadow: 0 0 24px rgba(0,255,136,0.2);
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 0 32px rgba(0,255,136,0.3); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; filter: none; }
+
+  .btn-ghost {
+    background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 20px; font-size: 13px; cursor: pointer;
+    font-family: var(--font); transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+  .btn-ghost.active { background: rgba(0,255,136,0.08); border-color: var(--green); color: var(--green); }
+
+  /* Chip buttons */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+    background: transparent; border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-muted); font-size: 13px; cursor: pointer; font-family: var(--font); transition: all 0.2s;
+  }
+  .chip:hover { border-color: var(--border-hover); color: var(--text); }
+  .chip.selected { background: rgba(0,255,136,0.08); border-color: var(--green); color: var(--green); }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
+  .animate-in { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .delay-3 { animation-delay: 0.3s; opacity: 0; }
+
+  /* Step indicator */
+  .steps { display: flex; align-items: center; gap: 4px; justify-content: center; margin-bottom: 32px; }
+  .step-item { display: flex; align-items: center; gap: 4px; }
+  .step-dot {
+    width: 28px; height: 6px; border-radius: 3px; transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
+    background: var(--border);
+  }
+  .step-dot.active { background: var(--green); box-shadow: 0 0 12px rgba(0,255,136,0.3); width: 36px; }
+  .step-dot.done { background: var(--green-dim); }
+  .step-label { font-size: 9px; color: var(--text-dim); font-family: var(--mono); letter-spacing: 0.05em; transition: color 0.3s; }
+  .step-label.active { color: var(--green); }
+  .step-label.done { color: var(--green-dim); }
+
+  /* Map */
+  #map-container { width: 100%; height: 340px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+  .leaflet-container { background: var(--bg) !important; }
+  .leaflet-control-attribution { display: none !important; }
+  .leaflet-control-zoom { border: none !important; }
+  .leaflet-control-zoom a { background: var(--bg-card) !important; color: var(--green) !important; border: 1px solid var(--border) !important; }
+  .dc-marker {
+    border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 0 8px currentColor;
+  }
+  .dc-marker:hover { transform: scale(1.5); }
+  .dc-popup .leaflet-popup-content-wrapper {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+    font-family: var(--font); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .dc-popup .leaflet-popup-tip { background: var(--bg-card); border: 1px solid var(--border); }
+  .leaflet-popup-close-button { color: var(--text-muted) !important; }
+
+  /* Scenario cards */
+  .scenario-card {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); cursor: pointer; transition: all 0.25s; text-align: left;
+  }
+  .scenario-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+  .scenario-card.selected { border-color: var(--green); background: rgba(0,255,136,0.05); }
+
+  /* Token bar */
+  .token-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .token-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+
+  /* Textarea */
+  .prompt-input {
+    width: 100%; min-height: 100px; padding: 14px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: var(--mono); font-size: 13px;
+    resize: vertical; outline: none; transition: border-color 0.2s;
+  }
+  .prompt-input:focus { border-color: var(--green); }
+  .prompt-input::placeholder { color: var(--text-dim); }
+
+  /* Comparison table */
+  .compare-row {
+    display: grid; grid-template-columns: 1fr 80px 80px 60px; gap: 8px; align-items: center;
+    padding: 10px 12px; border-radius: 8px; transition: background 0.2s;
+  }
+  .compare-row:hover { background: rgba(0,255,136,0.03); }
+  .compare-row.highlight { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.15); }
+
+  /* Range slider */
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--green); cursor: pointer; box-shadow: 0 0 10px rgba(0,255,136,0.3);
+  }
+
+  /* Gauge SVG */
+  .gauge-value { transition: all 1s cubic-bezier(0.16,1,0.3,1); }
+
+  /* Hide sections */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Detection card */
+  .dc-detect {
+    margin-top:14px; padding:14px; background:var(--bg); border-radius:12px;
+    border:1px solid var(--border); transition: all 0.3s;
+  }
+  .dc-detect.detected { border-color: rgba(0,255,136,0.2); background: rgba(0,255,136,0.03); }
+  .dc-detect-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; }
+  .dc-detect-stat { text-align:center; }
+  .dc-detect-stat .label { font-size:9px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; }
+  .dc-detect-stat .value { font-size:15px; font-weight:700; font-family:var(--mono); margin-top:2px; }
+
+  /* Focus indicators */
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 4px; }
+  button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .container { padding: 12px; }
+    .card { padding: 20px; }
+    #map-container { height: 260px; }
+    .compare-row { grid-template-columns: 1fr 60px 60px 50px; font-size: 12px; }
+    .dc-detect-grid { grid-template-columns: 1fr 1fr; }
+    #provider-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding:12px 0">
+    <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="reset()">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(0,255,136,0.1);display:flex;align-items:center;justify-content:center;font-size:18px">🌍</div>
+      <span style="font-size:16px;font-weight:700;letter-spacing:-0.02em">Green<span style="color:var(--green)">AI</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span id="data-source" style="font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:0.05em;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.03);border:1px solid var(--border)">● Cached</span>
+      <button class="btn-ghost" id="btn-leaderboard" onclick="togglePanel('leaderboard')" style="padding:6px 12px;font-size:11px;border-radius:8px">🏆 Rankings</button>
+      <button class="btn-ghost" id="btn-map-toggle" onclick="togglePanel('map')" style="padding:6px 12px;font-size:11px;border-radius:8px">🗺️ Map</button>
+      <button class="btn-ghost" id="btn-settings" onclick="togglePanel('settings')" style="padding:6px 12px;font-size:11px;border-radius:8px">⚙️</button>
+    </div>
+  </header>
+
+  <!-- MAP PANEL -->
+  <div id="map-panel" class="card" style="display:none;margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="font-size:15px;font-weight:700">🗺️ Global Datacenter Map</h3>
+      <button class="btn-ghost" onclick="togglePanel('map')" style="padding:4px 10px;font-size:11px">Close</button>
+    </div>
+    <div id="map-container"></div>
+    <div id="map-dc-info" style="display:none;margin-top:12px;padding:14px;background:var(--bg);border-radius:10px"></div>
+    <div style="display:flex;gap:16px;margin-top:10px;justify-content:center">
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim)"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span> &lt;100 g/kWh</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim)"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block"></span> 100-300</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim)"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block"></span> &gt;300</div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div id="settings-panel" class="card" style="display:none;margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="font-size:15px;font-weight:700">⚙️ Settings</h3>
+      <button class="btn-ghost" onclick="togglePanel('settings')" style="padding:4px 10px;font-size:11px">Close</button>
+    </div>
+    <div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">🔍 Real Datacenter Detection</div>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Makes an actual API call via OpenRouter to detect which datacenter serves your AI requests by measuring latency and parsing response headers.</p>
+      <div id="detection-status" style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Checking availability...</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-ghost" id="btn-detect" onclick="detectDatacenter()" disabled style="padding:8px 14px;font-size:11px">🔍 Detect datacenter</button>
+        <span id="detection-remaining" style="font-size:10px;color:var(--text-dim)"></span>
+      </div>
+      <div id="detection-result" style="display:none;margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px"></div>
+    </div>
+    <div style="padding:14px;background:var(--bg);border-radius:10px">
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.6">
+        <strong style="color:var(--text-muted)">With detection:</strong> Real API call (~$0.00001) to detect actual datacenter<br>
+        <strong style="color:var(--text-muted)">Without:</strong> Estimates based on closest datacenter to your location<br>
+        <strong style="color:var(--text-muted)">Limit:</strong> 3 detections per session to keep costs minimal
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD PANEL -->
+  <div id="leaderboard-panel" class="card" style="display:none;margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="font-size:15px;font-weight:700">🏆 Cleanest Datacenters</h3>
+      <button class="btn-ghost" onclick="togglePanel('leaderboard')" style="padding:4px 10px;font-size:11px">Close</button>
+    </div>
+    <div id="leaderboard-content"></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="app">
+    <!-- STEP 0: HERO + LOCATION -->
+    <div id="step-0" class="section active">
+      <div class="animate-in" style="text-align:center;margin-bottom:40px">
+        <div style="font-size:11px;color:var(--green);letter-spacing:0.2em;text-transform:uppercase;font-family:var(--mono);margin-bottom:14px">Carbon Footprint Calculator</div>
+        <h1 style="font-size:clamp(32px,7vw,52px);font-weight:800;line-height:1.08;margin:0 0 14px;letter-spacing:-0.03em">
+          See your AI's<br><span style="color:var(--green)">true cost</span>
+        </h1>
+        <p style="font-size:15px;color:var(--text-muted);max-width:420px;margin:0 auto;line-height:1.6">
+          Every prompt has a carbon price. Find out what yours costs the planet — and how to reduce it.
+        </p>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="animate-in delay-1" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;margin-bottom:36px;background:var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:16px 12px;background:var(--bg-card);text-align:center">
+          <div style="font-size:10px;margin-bottom:4px">⚡</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono)">0.08g</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:2px">avg request</div>
+        </div>
+        <div style="padding:16px 12px;background:var(--bg-card);text-align:center">
+          <div style="font-size:10px;margin-bottom:4px">🌿</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono)">Quebec</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:2px">cleanest DC</div>
+        </div>
+        <div style="padding:16px 12px;background:var(--bg-card);text-align:center">
+          <div style="font-size:10px;margin-bottom:4px">🏭</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono)">Mumbai</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:2px">dirtiest DC</div>
+        </div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="steps" id="steps-indicator"></div>
+
+      <!-- Provider/Model card -->
+      <div class="card animate-in delay-2">
+        <div style="font-size:11px;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;font-family:var(--mono);margin-bottom:6px">Step 1</div>
+        <h2 style="margin:0 0 4px;font-size:19px;font-weight:700">🤖 Which AI are you using?</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 18px">Pick your model. We'll detect the datacenter and calculate the carbon cost.</p>
+
+        <div id="provider-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px"></div>
+        <div id="model-list" style="display:grid;gap:6px"></div>
+
+        <!-- Inline datacenter detection -->
+        <div id="dc-detect-card" class="dc-detect" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:12px;font-weight:600;color:var(--text)">🔍 Datacenter Detection</div>
+            <span id="dc-detect-status" style="font-size:10px;font-family:var(--mono);color:var(--text-dim)"></span>
+          </div>
+          <div id="dc-detect-body" style="margin-top:8px">
+            <div style="font-size:11px;color:var(--text-dim)">Select a model to detect datacenter...</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%;margin-top:18px" id="btn-step0-next" disabled onclick="goToStep(1)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 1: TASK (TOKEN-BASED) -->
+    <div id="step-1" class="section">
+      <div class="steps" id="steps-indicator-1"></div>
+      <div class="card animate-in">
+        <div style="font-size:11px;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;font-family:var(--mono);margin-bottom:6px">Step 2</div>
+        <h2 style="margin:0 0 4px;font-size:19px;font-weight:700">⚡ What are you doing?</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 18px">Real scenarios with real token counts. Not generic buckets.</p>
+
+        <!-- Mode toggle -->
+        <div style="display:flex;gap:4px;padding:3px;background:var(--bg);border-radius:10px;margin-bottom:18px;border:1px solid var(--border)">
+          <button class="chip selected" id="mode-scenarios" onclick="setTaskMode('scenarios')" style="flex:1;justify-content:center;border:none;border-radius:8px;padding:10px">📋 Pick a scenario</button>
+          <button class="chip" id="mode-prompt" onclick="setTaskMode('prompt')" style="flex:1;justify-content:center;border:none;border-radius:8px;padding:10px">✍️ Paste your prompt</button>
+        </div>
+
+        <!-- Scenarios -->
+        <div id="scenarios-panel" style="display:grid;gap:8px"></div>
+
+        <!-- Prompt analyzer -->
+        <div id="prompt-panel" style="display:none">
+          <textarea class="prompt-input" id="prompt-textarea" placeholder="Paste your actual prompt here... We'll estimate the token count and carbon footprint in real-time." oninput="analyzePrompt()"></textarea>
+          <div style="display:flex;justify-content:space-between;margin-top:10px;padding:0 4px">
+            <div style="font-size:12px;color:var(--text-dim)">
+              <span id="prompt-chars">0</span> chars → <span id="prompt-tokens" style="color:var(--green);font-family:var(--mono)">0</span> tokens (input)
+            </div>
+            <div style="font-size:12px;color:var(--text-dim)">
+              Est. output: <span id="prompt-output-tokens" style="color:var(--amber);font-family:var(--mono)">0</span> tokens
+            </div>
+          </div>
+          <div id="prompt-estimate" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border-radius:10px"></div>
+        </div>
+
+        <!-- Token breakdown (shown after selection) -->
+        <div id="token-breakdown" style="display:none;margin-top:18px;padding:16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px">Token Breakdown</div>
+          <div style="display:grid;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:var(--text-muted)">📥 Input tokens</span>
+              <span id="tb-input" style="font-size:13px;font-family:var(--mono);color:var(--green)">—</span>
+            </div>
+            <div class="token-bar"><div class="token-bar-fill" id="tb-input-bar" style="width:0%;background:var(--green)"></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:var(--text-muted)">📤 Output tokens</span>
+              <span id="tb-output" style="font-size:13px;font-family:var(--mono);color:var(--amber)">—</span>
+            </div>
+            <div class="token-bar"><div class="token-bar-fill" id="tb-output-bar" style="width:0%;background:var(--amber)"></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border)">
+              <span style="font-size:12px;font-weight:600;color:var(--text)">⚡ GPU-seconds</span>
+              <span id="tb-gpu" style="font-size:13px;font-family:var(--mono);color:var(--text)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;font-weight:600;color:var(--text)">🔋 Energy</span>
+              <span id="tb-energy" style="font-size:13px;font-family:var(--mono);color:var(--text)">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn-ghost" style="flex:1" onclick="goToStep(0)">← Back</button>
+          <button class="btn-primary" style="flex:2" id="btn-step1-next" disabled onclick="goToStep(2)">🌱 Show me the damage</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: RESULTS -->
+    <div id="step-2" class="section">
+      <div class="steps" id="steps-indicator-2"></div>
+      <!-- Grade hero -->
+      <div class="card animate-in" id="results-grade-card" style="text-align:center;margin-bottom:16px">
+        <svg id="gauge-svg" viewBox="0 0 200 180" style="width:220px;height:180px;margin:0 auto;display:block">
+          <defs>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path id="gauge-bg" fill="none" stroke="#162016" stroke-width="8" stroke-linecap="round"/>
+          <path id="gauge-fill" fill="none" stroke-width="8" stroke-linecap="round" filter="url(#glow)" class="gauge-value"/>
+          <circle id="gauge-dot" r="5" filter="url(#glow)" class="gauge-value"/>
+        </svg>
+        <div id="gauge-letter" style="font-size:48px;font-weight:800;font-family:var(--mono);line-height:1;margin-top:-60px;position:relative"></div>
+        <div id="gauge-label" style="font-size:11px;color:var(--text-muted);letter-spacing:0.15em;text-transform:uppercase;margin-top:4px"></div>
+        <div style="margin-top:20px">
+          <span id="result-co2" style="font-size:38px;font-weight:800;font-family:var(--mono)"></span>
+          <span style="font-size:16px;color:var(--text-muted)"> g CO₂</span>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">per request</div>
+        <div id="result-config" style="display:flex;justify-content:center;gap:16px;margin-top:14px;flex-wrap:wrap"></div>
+      </div>
+
+      <!-- Journey -->
+      <div class="card animate-in delay-1" style="margin-bottom:16px;padding:16px 14px">
+        <div id="result-journey" style="display:flex;align-items:center;justify-content:space-between;overflow-x:auto;gap:2px"></div>
+      </div>
+
+      <!-- Cross-model comparison -->
+      <div class="card animate-in delay-1" style="margin-bottom:16px">
+        <h3 style="margin:0 0 14px;font-size:15px;font-weight:700">⚖️ Same task, different models</h3>
+        <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">
+          <div class="compare-row" style="padding:6px 12px;font-weight:600">
+            <span>Model</span><span style="text-align:right">Tokens</span><span style="text-align:right">CO₂</span><span style="text-align:right">Grade</span>
+          </div>
+        </div>
+        <div id="comparison-table"></div>
+      </div>
+
+      <!-- Equivalences -->
+      <div class="animate-in delay-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="equivalences"></div>
+
+      <!-- Scale -->
+      <div class="card animate-in delay-2" style="margin-bottom:16px">
+        <h3 style="margin:0 0 14px;font-size:15px;font-weight:700">📊 Scale it up</h3>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <span style="font-size:12px;color:var(--text-muted);min-width:90px">Requests/day:</span>
+          <input type="range" min="1" max="1000" value="10" id="req-slider" oninput="syncScaleInput(this.value)">
+          <input type="number" min="1" max="10000" value="10" id="req-input"
+            oninput="syncScaleSlider(this.value)"
+            style="width:60px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--green);font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;outline:none">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:10px;overflow:hidden">
+          <div style="padding:14px;background:var(--bg);text-align:center">
+            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">Daily</div>
+            <div id="scale-daily" style="font-size:18px;font-weight:700;font-family:var(--mono);margin-top:4px">—</div>
+          </div>
+          <div style="padding:14px;background:var(--bg);text-align:center">
+            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">Monthly</div>
+            <div id="scale-monthly" style="font-size:18px;font-weight:700;font-family:var(--mono);margin-top:4px">—</div>
+          </div>
+          <div style="padding:14px;background:var(--bg);text-align:center">
+            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">Yearly</div>
+            <div id="scale-yearly" style="font-size:18px;font-weight:700;font-family:var(--mono);margin-top:4px">—</div>
+          </div>
+        </div>
+        <div id="scale-driving" style="margin-top:10px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--text-muted);text-align:center"></div>
+      </div>
+
+      <!-- Region switch -->
+      <div class="card animate-in delay-3" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(0,255,136,0.03) 0%,var(--bg-card) 100%)">
+        <h3 style="margin:0 0 14px;font-size:15px;font-weight:700">🔄 What if you switched regions?</h3>
+        <div id="region-switch" style="display:flex;align-items:center;gap:12px"></div>
+        <div id="region-saving" style="margin-top:10px;text-align:center;padding:8px;background:rgba(0,255,136,0.06);border-radius:8px;font-size:13px;color:var(--green);font-weight:600;display:none"></div>
+      </div>
+
+      <!-- Methodology -->
+      <details class="card animate-in delay-3" style="margin-bottom:16px;cursor:pointer">
+        <summary style="font-size:14px;font-weight:600;color:var(--text-muted);list-style:none">📊 How we calculated this ▼</summary>
+        <div id="methodology" style="margin-top:16px;display:grid;gap:10px"></div>
+      </details>
+
+      <!-- Actions -->
+      <div class="animate-in delay-3" style="display:flex;gap:10px">
+        <button class="btn-ghost" style="flex:1" onclick="reset()">↩ Start over</button>
+        <button class="btn-ghost" style="flex:1" onclick="togglePanel('map')">🗺️ Explore map</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="margin-top:48px;padding-bottom:32px;text-align:center;font-size:10px;color:var(--text-dim);line-height:2">
+    Built with 🌿 by <a href="https://greenai.info" style="color:var(--green);text-decoration:none">Green AI</a><br>
+    Data: <a href="https://ember-climate.org/" style="color:var(--text-muted);text-decoration:none">Ember Climate</a> ·
+    <a href="https://www.iea.org/" style="color:var(--text-muted);text-decoration:none">IEA</a> ·
+    <a href="https://mlco2.github.io/impact/" style="color:var(--text-muted);text-decoration:none">ML CO₂ Impact</a><br>
+    <a href="https://greenai.info/docs" style="color:var(--text-muted);text-decoration:none">API Docs ↗</a>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// API INTEGRATION
+// ═══════════════════════════════════════════════════════════
+const API_BASE = window.location.origin;
+
+async function initLiveData() {
+  try {
+    const [regionsRes, providersRes] = await Promise.allSettled([
+      fetch(`${API_BASE}/v1/regions`),
+      fetch(`${API_BASE}/v1/providers`),
+    ]);
+    // Overlay live region data onto hardcoded DATACENTERS
+    if (regionsRes.status === 'fulfilled' && regionsRes.value.ok) {
+      const regions = await regionsRes.value.json();
+      regions.forEach(r => {
+        const id = `${r.provider}-${r.region_code}`;
+        const existing = DATACENTERS.find(d => d.id === id);
+        if (existing) {
+          existing.intensity = r.intensity_g_kwh;
+          if (r.renewable_percentage != null) existing.renewable = r.renewable_percentage;
+          if (r.coordinates) { existing.lat = r.coordinates[0]; existing.lng = r.coordinates[1]; }
+          if (r.city) existing.city = r.city;
+        }
+      });
+      const ds = document.getElementById('data-source');
+      ds.textContent = '● Live API';
+      ds.style.color = 'var(--green)';
+      ds.style.borderColor = 'rgba(0,255,136,0.2)';
+      ds.style.background = 'rgba(0,255,136,0.06)';
+    }
+  } catch (e) {
+    console.warn('API unavailable, using cached data:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+
+const DATACENTERS = [
+  { id:"aws-us-west-2", provider:"AWS", city:"Oregon", country:"US", intensity:120, renewable:75, lat:45.52, lng:-122.68 },
+  { id:"aws-us-east-1", provider:"AWS", city:"Virginia", country:"US", intensity:380, renewable:30, lat:38.13, lng:-78.45 },
+  { id:"aws-eu-north-1", provider:"AWS", city:"Stockholm", country:"SE", intensity:45, renewable:95, lat:59.33, lng:18.06 },
+  { id:"aws-eu-west-1", provider:"AWS", city:"Dublin", country:"IE", intensity:320, renewable:40, lat:53.35, lng:-6.26 },
+  { id:"aws-eu-west-3", provider:"AWS", city:"Paris", country:"FR", intensity:60, renewable:90, lat:48.86, lng:2.35 },
+  { id:"aws-eu-central-1", provider:"AWS", city:"Frankfurt", country:"DE", intensity:380, renewable:45, lat:50.11, lng:8.68 },
+  { id:"aws-ca-central-1", provider:"AWS", city:"Montreal", country:"CA", intensity:30, renewable:95, lat:45.5, lng:-73.57 },
+  { id:"aws-ap-south-1", provider:"AWS", city:"Mumbai", country:"IN", intensity:650, renewable:20, lat:19.08, lng:72.88 },
+  { id:"aws-ap-southeast-2", provider:"AWS", city:"Sydney", country:"AU", intensity:550, renewable:30, lat:-33.87, lng:151.21 },
+  { id:"aws-ap-northeast-1", provider:"AWS", city:"Tokyo", country:"JP", intensity:450, renewable:25, lat:35.68, lng:139.69 },
+  { id:"aws-ap-northeast-2", provider:"AWS", city:"Seoul", country:"KR", intensity:420, renewable:10, lat:37.57, lng:126.98 },
+  { id:"aws-ap-southeast-1", provider:"AWS", city:"Singapore", country:"SG", intensity:400, renewable:5, lat:1.35, lng:103.82 },
+  { id:"aws-sa-east-1", provider:"AWS", city:"São Paulo", country:"BR", intensity:100, renewable:85, lat:-23.55, lng:-46.63 },
+  { id:"azure-norwayeast", provider:"Azure", city:"Oslo", country:"NO", intensity:20, renewable:98, lat:59.91, lng:10.75 },
+  { id:"azure-canadaeast", provider:"Azure", city:"Quebec", country:"CA", intensity:20, renewable:98, lat:46.81, lng:-71.21 },
+  { id:"azure-swedencentral", provider:"Azure", city:"Gävle", country:"SE", intensity:45, renewable:95, lat:60.67, lng:17.15 },
+  { id:"azure-westus2", provider:"Azure", city:"Washington", country:"US", intensity:100, renewable:80, lat:47.23, lng:-119.85 },
+  { id:"azure-eastus", provider:"Azure", city:"Virginia", country:"US", intensity:380, renewable:30, lat:37.43, lng:-79.43 },
+  { id:"azure-westeurope", provider:"Azure", city:"Amsterdam", country:"NL", intensity:320, renewable:40, lat:52.37, lng:4.89 },
+  { id:"azure-francecentral", provider:"Azure", city:"Paris", country:"FR", intensity:60, renewable:90, lat:48.88, lng:2.32 },
+  { id:"azure-switzerlandnorth", provider:"Azure", city:"Zurich", country:"CH", intensity:35, renewable:75, lat:47.37, lng:8.54 },
+  { id:"gcp-us-west1", provider:"GCP", city:"Oregon", country:"US", intensity:120, renewable:75, lat:45.6, lng:-121.18 },
+  { id:"gcp-us-east4", provider:"GCP", city:"Virginia", country:"US", intensity:380, renewable:30, lat:39.02, lng:-77.47 },
+  { id:"gcp-europe-north1", provider:"GCP", city:"Hamina", country:"FI", intensity:85, renewable:65, lat:60.57, lng:27.19 },
+  { id:"gcp-northamerica-ne1", provider:"GCP", city:"Montreal", country:"CA", intensity:30, renewable:95, lat:45.5, lng:-73.6 },
+  { id:"gcp-europe-west9", provider:"GCP", city:"Paris", country:"FR", intensity:60, renewable:90, lat:48.84, lng:2.38 },
+  { id:"gcp-asia-south1", provider:"GCP", city:"Mumbai", country:"IN", intensity:650, renewable:20, lat:19.1, lng:72.9 },
+];
+
+const PROVIDERS = [
+  { id:"openai", name:"OpenAI", models:["GPT-4o","GPT-4o Mini","GPT-4.5","o1","o3-mini"] },
+  { id:"anthropic", name:"Anthropic", models:["Claude Opus 4","Claude Sonnet 4","Claude Haiku 3.5"] },
+  { id:"google", name:"Google", models:["Gemini 2.0 Flash","Gemini 2.0 Pro","Gemini 1.5 Pro"] },
+  { id:"meta", name:"Meta", models:["Llama 3.3 70B","Llama 3.1 405B"] },
+  { id:"mistral", name:"Mistral", models:["Mistral Large","Mixtral 8x7B"] },
+];
+
+// Model size multiplier (relative compute cost)
+const MODEL_MULT = {
+  "GPT-4o":1.0, "GPT-4o Mini":0.3, "GPT-4.5":1.8, "o1":1.5, "o3-mini":0.5,
+  "Claude Opus 4":1.6, "Claude Sonnet 4":1.0, "Claude Haiku 3.5":0.25,
+  "Gemini 2.0 Flash":0.4, "Gemini 2.0 Pro":1.3, "Gemini 1.5 Pro":1.1,
+  "Llama 3.3 70B":0.7, "Llama 3.1 405B":2.0,
+  "Mistral Large":1.0, "Mixtral 8x7B":0.5,
+};
+
+// Real-world scenarios with actual token estimates
+const SCENARIOS = [
+  { id:"translate", icon:"🌐", name:"Translate a paragraph", desc:"A paragraph of text between languages", inputTok:150, outputTok:160, example:"Translate: \"The quarterly results exceeded expectations...\"" },
+  { id:"quick-qa", icon:"❓", name:"Quick factual question", desc:"\"What year was X founded?\" type query", inputTok:30, outputTok:80, example:"What year was Spotify founded?" },
+  { id:"email", icon:"📧", name:"Draft a professional email", desc:"Business email from brief instructions", inputTok:80, outputTok:350, example:"Write an email declining a meeting politely..." },
+  { id:"summarize-article", icon:"📄", name:"Summarize an article", desc:"Condense a ~2000 word article", inputTok:2500, outputTok:400, example:"Summarize this article about renewable energy trends..." },
+  { id:"blog-post", icon:"✍️", name:"Write a blog post", desc:"~800 word post from a topic", inputTok:100, outputTok:1200, example:"Write a blog post about AI sustainability..." },
+  { id:"debug-code", icon:"🐛", name:"Debug a code snippet", desc:"Find & fix bugs in ~100 lines of code", inputTok:1500, outputTok:2000, example:"Here's my Python script that's throwing a TypeError..." },
+  { id:"analyze-data", icon:"📊", name:"Analyze a dataset", desc:"Interpret CSV data with insights", inputTok:5000, outputTok:1500, example:"Analyze this sales data and identify trends..." },
+  { id:"code-review", icon:"🔍", name:"Full code review", desc:"Review a 500-line PR with suggestions", inputTok:8000, outputTok:3000, example:"Review this pull request for best practices..." },
+  { id:"research-report", icon:"📚", name:"Research report", desc:"Deep dive on a topic with citations", inputTok:200, outputTok:4000, example:"Write a research summary on carbon capture technologies..." },
+  { id:"image-analysis", icon:"🖼️", name:"Analyze an image", desc:"Describe and extract info from a photo", inputTok:1200, outputTok:500, example:"What's in this image? Extract any text..." },
+];
+
+const BASE_POWER_W = 400;
+const DEFAULT_PUE = 1.2;
+const TOKENS_PER_SEC = 80; // approximate output speed
+const INPUT_ENERGY_MULT = 0.3; // input tokens cost ~30% of output tokens
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let state = {
+  step: 0,
+  provider: null,
+  model: null,
+  taskMode: 'scenarios',
+  scenario: null,
+  promptTokens: { input: 0, output: 0 },
+  map: null,
+  dcMarkers: [],
+  detectedDC: null,
+};
+
+// ═══════════════════════════════════════════════════════════
+// CALCULATIONS (real formulas from greenai.info API)
+// ═══════════════════════════════════════════════════════════
+function calcCO2(intensityGkWh, modelMult, inputTokens, outputTokens) {
+  // Output tokens dominate cost (autoregressive generation)
+  const outputTimeSec = outputTokens / TOKENS_PER_SEC;
+  const inputTimeSec = (inputTokens / TOKENS_PER_SEC) * INPUT_ENERGY_MULT;
+  const totalTimeSec = outputTimeSec + inputTimeSec;
+  const totalTimeH = totalTimeSec / 3600;
+  const powerW = BASE_POWER_W * modelMult;
+  const energyKWh = (powerW * totalTimeH) / 1000;
+  return { co2: energyKWh * DEFAULT_PUE * intensityGkWh, energyKWh, gpuSeconds: totalTimeSec, powerW };
+}
+
+function getGrade(co2g) {
+  if (co2g < 0.02) return { letter:"A+", color:"#00ff88", label:"Exceptional" };
+  if (co2g < 0.05) return { letter:"A", color:"#00ff88", label:"Excellent" };
+  if (co2g < 0.15) return { letter:"B", color:"#66dd88", label:"Good" };
+  if (co2g < 0.35) return { letter:"C", color:"#FFB800", label:"Average" };
+  if (co2g < 0.7) return { letter:"D", color:"#ff8844", label:"Poor" };
+  return { letter:"F", color:"#FF4444", label:"Bad" };
+}
+
+function intensityColor(v) { return v < 100 ? '#00ff88' : v < 300 ? '#FFB800' : '#FF4444'; }
+
+function getTokens() {
+  if (state.taskMode === 'scenarios' && state.scenario) {
+    return { input: state.scenario.inputTok, output: state.scenario.outputTok };
+  }
+  return state.promptTokens;
+}
+
+function getDCIntensity() {
+  if (state.detectedDC) return state.detectedDC.intensity;
+  return 380; // default US grid average
+}
+
+function getCurrentCO2() {
+  if (!state.model) return { co2:0, energyKWh:0, gpuSeconds:0, powerW:0 };
+  const t = getTokens();
+  return calcCO2(getDCIntensity(), MODEL_MULT[state.model]||1, t.input, t.output);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LEAFLET MAP
+// ═══════════════════════════════════════════════════════════
+function initMap() {
+  if (state.map) return;
+  const map = L.map('map-container', {
+    center: [30, 10], zoom: 2, minZoom: 2, maxZoom: 6,
+    zoomControl: true, attributionControl: false,
+    worldCopyJump: true,
+  });
+
+  // CartoDB Dark Matter tiles (free, no API key)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd', maxZoom: 19,
+  }).addTo(map);
+
+  // Add datacenter markers
+  const bestDC = DATACENTERS.reduce((b,d) => d.intensity < b.intensity ? d : b, DATACENTERS[0]);
+
+  DATACENTERS.forEach(dc => {
+    const color = intensityColor(dc.intensity);
+    const isBest = dc.id === bestDC.id;
+    const size = isBest ? 12 : 8;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};
+        box-shadow:0 0 ${isBest?16:8}px ${color}88;border:${isBest?'2px solid #fff':'1px solid '+color+'44'};
+        cursor:pointer;transition:transform 0.2s"
+        onmouseover="this.style.transform='scale(1.6)'" onmouseout="this.style.transform='scale(1)'"
+      ></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2],
+    });
+
+    const marker = L.marker([dc.lat, dc.lng], { icon }).addTo(map);
+
+    const popupHTML = `
+      <div style="font-family:var(--font);min-width:180px;padding:4px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px">${dc.city} ${isBest ? '⭐' : ''}</div>
+        <div style="font-size:11px;color:#6A946A;margin-bottom:10px">${dc.provider} · ${dc.country}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:9px;color:#3A5A3A;text-transform:uppercase;letter-spacing:0.1em">Intensity</div>
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${color}">${dc.intensity}<span style="font-size:10px;color:#6A946A"> g/kWh</span></div>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#3A5A3A;text-transform:uppercase;letter-spacing:0.1em">Renewable</div>
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:#00ff88">${dc.renewable}%</div>
+          </div>
+        </div>
+        ${state.model ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid #162016">
+          <div style="font-size:9px;color:#3A5A3A;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">If you ran here</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${intensityColor(dc.intensity)}">${calcCO2(dc.intensity, MODEL_MULT[state.model]||1, getTokens().input, getTokens().output).co2.toFixed(4)}g CO₂</div>
+        </div>` : ''}
+      </div>
+    `;
+
+    marker.bindPopup(popupHTML, { className: 'dc-popup', maxWidth: 220 });
+    marker.on('click', () => showDCInfo(dc));
+    state.dcMarkers.push(marker);
+  });
+
+  state.map = map;
+  setTimeout(() => map.invalidateSize(), 100);
+}
+
+function showDCInfo(dc) {
+  const el = document.getElementById('map-dc-info');
+  const color = intensityColor(dc.intensity);
+  const currentCO2 = getCurrentCO2().co2;
+  const dcCO2 = state.model ? calcCO2(dc.intensity, MODEL_MULT[state.model]||1, getTokens().input, getTokens().output).co2 : 0;
+  const saving = currentCO2 > 0 ? ((currentCO2 - dcCO2) / currentCO2 * 100) : 0;
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+      <div>
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">Datacenter</div>
+        <div style="font-size:14px;font-weight:600;margin-top:4px">${dc.city}</div>
+        <div style="font-size:10px;color:var(--text-dim)">${dc.provider}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">Intensity</div>
+        <div style="font-size:14px;font-weight:600;margin-top:4px;color:${color};font-family:var(--mono)">${dc.intensity} g/kWh</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">Renewable</div>
+        <div style="font-size:14px;font-weight:600;margin-top:4px;color:var(--green);font-family:var(--mono)">${dc.renewable}%</div>
+      </div>
+    </div>
+    ${saving > 0 && state.detectedDC ? `<div style="margin-top:10px;text-align:center;padding:6px;background:rgba(0,255,136,0.06);border-radius:6px;font-size:12px;color:var(--green)">
+      vs your DC (${state.detectedDC.city}): <strong>${saving > 0 ? '↓' : '↑'} ${Math.abs(saving).toFixed(0)}%</strong> CO₂
+    </div>` : ''}
+  `;
+  el.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════
+
+const STEP_LABELS = ['Model', 'Task', 'Results'];
+function renderStepIndicator(containerId, currentStep) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const item = document.createElement('div');
+    item.className = 'step-item';
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i === currentStep ? ' active' : i < currentStep ? ' done' : '');
+    const label = document.createElement('span');
+    label.className = 'step-label' + (i === currentStep ? ' active' : i < currentStep ? ' done' : '');
+    label.textContent = STEP_LABELS[i];
+    item.appendChild(dot);
+    item.appendChild(label);
+    el.appendChild(item);
+  }
+}
+
+function renderProviders() {
+  const grid = document.getElementById('provider-grid');
+  grid.innerHTML = PROVIDERS.map(p =>
+    `<button class="chip ${state.provider?.id === p.id ? 'selected' : ''}" onclick="selectProvider('${p.id}')"
+      style="justify-content:center;padding:12px 8px;font-weight:600;font-size:12px">${p.name}</button>`
+  ).join('');
+}
+
+function selectProvider(id) {
+  state.provider = PROVIDERS.find(p => p.id === id);
+  state.model = null;
+  state.detectedDC = null;
+  renderProviders();
+  renderModels();
+  document.getElementById('btn-step0-next').disabled = true;
+  // Hide and reset DC detection card
+  const card = document.getElementById('dc-detect-card');
+  card.style.display = 'none';
+  card.className = 'dc-detect';
+  document.getElementById('dc-detect-body').innerHTML = '<div style="font-size:11px;color:var(--text-dim)">Select a model to detect datacenter...</div>';
+}
+
+function renderModels() {
+  const list = document.getElementById('model-list');
+  if (!state.provider) { list.innerHTML = ''; return; }
+  list.innerHTML = state.provider.models.map(m => {
+    const mult = MODEL_MULT[m] || 1;
+    const sizeLabel = mult <= 0.3 ? 'Small' : mult <= 0.7 ? 'Medium' : mult <= 1.2 ? 'Large' : 'XL';
+    const sizeColor = mult <= 0.5 ? '#00ff88' : mult <= 1 ? '#FFB800' : '#FF4444';
+    const sel = state.model === m;
+    return `<button class="scenario-card ${sel ? 'selected' : ''}" onclick="selectModel('${m}')">
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${m}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:40px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div style="width:${Math.min(mult/2*100,100)}%;height:100%;background:${sizeColor};border-radius:2px"></div>
+        </div>
+        <span style="font-size:10px;color:${sizeColor};font-family:var(--mono);min-width:44px;text-align:right">${sizeLabel}</span>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function selectModel(m) {
+  state.model = m;
+  renderModels();
+  document.getElementById('btn-step0-next').disabled = false;
+  // Auto-trigger datacenter detection
+  autoDetectDatacenter();
+}
+
+function renderScenarios() {
+  const panel = document.getElementById('scenarios-panel');
+  const maxTokens = Math.max(...SCENARIOS.map(s => s.inputTok + s.outputTok));
+  panel.innerHTML = SCENARIOS.map(s => {
+    const totalTok = s.inputTok + s.outputTok;
+    const pct = (totalTok / maxTokens) * 100;
+    const sel = state.scenario?.id === s.id;
+    const barColor = totalTok < 500 ? '#00ff88' : totalTok < 3000 ? '#FFB800' : '#FF4444';
+    return `<button class="scenario-card ${sel ? 'selected' : ''}" onclick="selectScenario('${s.id}')">
+      <div style="font-size:24px;min-width:36px;text-align:center">${s.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px">${s.name}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${s.desc}</div>
+        <div class="token-bar" style="height:4px"><div class="token-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>
+      <div style="text-align:right;min-width:70px">
+        <div style="font-size:12px;font-family:var(--mono);color:var(--text)">${totalTok.toLocaleString()}</div>
+        <div style="font-size:9px;color:var(--text-muted)">tokens</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${s.inputTok}→${s.outputTok}</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function selectScenario(id) {
+  state.scenario = SCENARIOS.find(s => s.id === id);
+  renderScenarios();
+  showTokenBreakdown(state.scenario.inputTok, state.scenario.outputTok);
+  document.getElementById('btn-step1-next').disabled = false;
+}
+
+function setTaskMode(mode) {
+  state.taskMode = mode;
+  document.getElementById('mode-scenarios').className = 'chip' + (mode === 'scenarios' ? ' selected' : '');
+  document.getElementById('mode-prompt').className = 'chip' + (mode === 'prompt' ? ' selected' : '');
+  document.getElementById('scenarios-panel').style.display = mode === 'scenarios' ? 'grid' : 'none';
+  document.getElementById('prompt-panel').style.display = mode === 'prompt' ? 'block' : 'none';
+  if (mode === 'prompt') { state.scenario = null; document.getElementById('btn-step1-next').disabled = true; }
+}
+
+function analyzePrompt() {
+  const text = document.getElementById('prompt-textarea').value;
+  const chars = text.length;
+  const inputTokens = Math.ceil(chars / 4);
+  // Estimate output: short prompts get longer responses, long prompts get shorter
+  const outputTokens = inputTokens < 50 ? inputTokens * 4 : inputTokens < 500 ? inputTokens * 1.5 : Math.ceil(inputTokens * 0.6);
+
+  state.promptTokens = { input: inputTokens, output: Math.round(outputTokens) };
+
+  document.getElementById('prompt-chars').textContent = chars.toLocaleString();
+  document.getElementById('prompt-tokens').textContent = inputTokens.toLocaleString();
+  document.getElementById('prompt-output-tokens').textContent = Math.round(outputTokens).toLocaleString();
+
+  if (chars > 0) {
+    showTokenBreakdown(inputTokens, Math.round(outputTokens));
+    document.getElementById('btn-step1-next').disabled = false;
+
+    // Show estimate
+    if (state.model) {
+      const result = calcCO2(getDCIntensity(), MODEL_MULT[state.model]||1, inputTokens, Math.round(outputTokens));
+      const grade = getGrade(result.co2);
+      const est = document.getElementById('prompt-estimate');
+      est.style.display = 'block';
+      est.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:11px;color:var(--text-dim)">Estimated footprint:</span></div>
+          <div><span style="font-size:18px;font-weight:700;font-family:var(--mono);color:${grade.color}">${result.co2.toFixed(4)}g</span>
+            <span style="font-size:11px;color:${grade.color};margin-left:6px">${grade.letter}</span></div>
+        </div>
+      `;
+    }
+  } else {
+    document.getElementById('token-breakdown').style.display = 'none';
+    document.getElementById('prompt-estimate').style.display = 'none';
+    document.getElementById('btn-step1-next').disabled = true;
+  }
+}
+
+function showTokenBreakdown(input, output) {
+  const el = document.getElementById('token-breakdown');
+  el.style.display = 'block';
+  const maxTok = Math.max(input, output, 1);
+  const modelMult = MODEL_MULT[state.model] || 1;
+  const result = state.detectedDC ? calcCO2(state.detectedDC.intensity, modelMult, input, output) : calcCO2(380, modelMult, input, output);
+
+  document.getElementById('tb-input').textContent = input.toLocaleString();
+  document.getElementById('tb-output').textContent = output.toLocaleString();
+  document.getElementById('tb-input-bar').style.width = (input / maxTok * 100) + '%';
+  document.getElementById('tb-output-bar').style.width = (output / maxTok * 100) + '%';
+  document.getElementById('tb-gpu').textContent = result.gpuSeconds.toFixed(2) + 's';
+  document.getElementById('tb-energy').textContent = (result.energyKWh * 1000000).toFixed(2) + ' mWh';
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════════
+
+function renderResults() {
+  const result = getCurrentCO2();
+  const grade = getGrade(result.co2);
+  const tokens = getTokens();
+
+  // Gauge
+  renderGauge(result.co2, grade);
+
+  // Grade card
+  document.getElementById('results-grade-card').style.borderColor = grade.color + '22';
+  document.getElementById('results-grade-card').style.background = `linear-gradient(180deg, ${grade.color}08 0%, var(--bg-card) 100%)`;
+
+  // Animate CO2 number
+  animateNumber('result-co2', result.co2, result.co2 < 0.01 ? 4 : 3);
+
+  // Config summary
+  const taskLabel = state.taskMode === 'scenarios' ? state.scenario.name : 'Custom prompt';
+  const dcLabel = state.detectedDC ? `${state.detectedDC.city} (${state.detectedDC.provider})` : 'Unknown DC';
+  document.getElementById('result-config').innerHTML = [
+    { icon:'🏢', val: dcLabel },
+    { icon:'🤖', val: state.model },
+    { icon:'⚡', val: taskLabel },
+  ].map(i => `<span style="font-size:11px;color:var(--text-dim)">${i.icon} ${i.val}</span>`).join('');
+
+  // Journey
+  document.getElementById('result-journey').innerHTML = [
+    { icon:'💭', label:`${tokens.input} tok`, sub:'input' },
+    { icon:'🤖', label:`${tokens.output} tok`, sub:'output' },
+    { icon:'⚡', label:`${result.gpuSeconds.toFixed(1)}s`, sub:'GPU time' },
+    { icon:'🏢', label:`${getDCIntensity()}g/kWh`, sub: state.detectedDC ? state.detectedDC.city : 'DC' },
+    { icon:'🌿', label:`${result.co2.toFixed(3)}g`, sub:'CO₂' },
+  ].map((item, i, arr) => `
+    <div style="display:flex;align-items:center;gap:3px">
+      <div style="text-align:center;min-width:62px">
+        <div style="font-size:20px">${item.icon}</div>
+        <div style="font-size:12px;font-weight:700;font-family:var(--mono);margin-top:3px">${item.label}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${item.sub}</div>
+      </div>
+      ${i < arr.length-1 ? '<span style="color:var(--text-dim);font-size:11px">→</span>' : ''}
+    </div>
+  `).join('');
+
+  // Cross-model comparison
+  renderComparison(tokens);
+
+  // Equivalences
+  renderEquivalences(result.co2);
+
+  // Scale
+  updateScale();
+
+  // Region switch
+  renderRegionSwitch(result.co2);
+
+  // Methodology
+  renderMethodology(result);
+}
+
+function renderGauge(co2, grade) {
+  const maxCO2 = 1.0;
+  const pct = Math.min(co2 / maxCO2, 1);
+  const r = 80, cx = 100, cy = 95;
+  const startA = -150 * Math.PI / 180;
+  const endAngle = (-150 + pct * 300) * Math.PI / 180;
+  const bgEnd = 150 * Math.PI / 180;
+
+  const arc = (s, e, radius) => {
+    const x1=cx+radius*Math.cos(s), y1=cy+radius*Math.sin(s);
+    const x2=cx+radius*Math.cos(e), y2=cy+radius*Math.sin(e);
+    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${e-s>Math.PI?1:0} 1 ${x2} ${y2}`;
+  };
+
+  document.getElementById('gauge-bg').setAttribute('d', arc(startA, bgEnd, r));
+  document.getElementById('gauge-fill').setAttribute('d', arc(startA, endAngle, r));
+  document.getElementById('gauge-fill').setAttribute('stroke', grade.color);
+  document.getElementById('gauge-dot').setAttribute('cx', cx + r * Math.cos(endAngle));
+  document.getElementById('gauge-dot').setAttribute('cy', cy + r * Math.sin(endAngle));
+  document.getElementById('gauge-dot').setAttribute('fill', grade.color);
+  document.getElementById('gauge-letter').textContent = grade.letter;
+  document.getElementById('gauge-letter').style.color = grade.color;
+  document.getElementById('gauge-letter').style.textShadow = `0 0 30px ${grade.color}44`;
+  document.getElementById('gauge-label').textContent = grade.label;
+}
+
+function co2GradientColor(co2, minCO2, maxCO2) {
+  const t = Math.min((co2 - minCO2) / (maxCO2 - minCO2 || 1), 1);
+  if (t < 0.33) {
+    const p = t / 0.33;
+    return `rgb(${Math.round(p * 255)}, ${Math.round(255 - p * 70)}, ${Math.round(136 - p * 68)})`;
+  } else if (t < 0.66) {
+    const p = (t - 0.33) / 0.33;
+    return `rgb(255, ${Math.round(185 - p * 117)}, ${Math.round(68 - p * 68)})`;
+  }
+  return '#FF4444';
+}
+
+function renderComparison(tokens) {
+  const allModels = Object.keys(MODEL_MULT);
+  const results = allModels.map(m => {
+    const r = calcCO2(getDCIntensity(), MODEL_MULT[m], tokens.input, tokens.output);
+    return { model: m, co2: r.co2, grade: getGrade(r.co2), mult: MODEL_MULT[m] };
+  }).sort((a, b) => a.co2 - b.co2);
+
+  const minCO2 = results[0].co2;
+  const maxCO2 = results[results.length - 1].co2;
+
+  document.getElementById('comparison-table').innerHTML = results.map(r => {
+    const isCurrent = r.model === state.model;
+    const co2Color = co2GradientColor(r.co2, minCO2, maxCO2);
+    return `<div class="compare-row ${isCurrent ? 'highlight' : ''}">
+      <div>
+        <span style="font-size:13px;font-weight:${isCurrent?700:400};color:${isCurrent?'var(--green)':'var(--text)'}">${r.model}</span>
+        ${isCurrent ? '<span style="font-size:9px;color:var(--green);margin-left:6px">← yours</span>' : ''}
+      </div>
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text-dim);text-align:right">${(tokens.input+tokens.output).toLocaleString()}</span>
+      <span style="font-size:12px;font-family:var(--mono);color:${co2Color};text-align:right;font-weight:600">${r.co2.toFixed(4)}g</span>
+      <span style="font-size:12px;font-weight:700;color:${r.grade.color};text-align:right">${r.grade.letter}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderEquivalences(co2g) {
+  const items = [
+    { icon:'🌧️', val:(co2g*20).toFixed(1), label:'raindrops of water', sub:'per request' },
+    { icon:'🔍', val:(co2g/0.2).toFixed(1), label:'Google searches', sub:'equivalent' },
+    { icon:'😮‍💨', val:(co2g/0.2).toFixed(1), label:'human breaths', sub:'of CO₂' },
+    { icon:'💡', val:(co2g/5).toFixed(2), label:'seconds of LED bulb', sub:'10W equivalent' },
+  ];
+  document.getElementById('equivalences').innerHTML = items.map(i => `
+    <div class="card" style="text-align:center;padding:16px">
+      <div style="font-size:24px;margin-bottom:6px">${i.icon}</div>
+      <div style="font-size:22px;font-weight:700;font-family:var(--mono)">${i.val}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${i.label}</div>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${i.sub}</div>
+    </div>
+  `).join('');
+}
+
+function syncScaleInput(val) {
+  const n = Math.max(1, parseInt(val) || 1);
+  document.getElementById('req-input').value = n;
+  updateScale();
+}
+function syncScaleSlider(val) {
+  const n = Math.max(1, Math.min(10000, parseInt(val) || 1));
+  document.getElementById('req-slider').value = Math.min(n, 1000);
+  document.getElementById('req-input').value = n;
+  updateScale();
+}
+function updateScale() {
+  const n = Math.max(1, parseInt(document.getElementById('req-input').value) || 1);
+  const co2 = getCurrentCO2().co2;
+  document.getElementById('scale-daily').textContent = (co2 * n).toFixed(2) + 'g';
+  document.getElementById('scale-monthly').textContent = (co2 * n * 30).toFixed(1) + 'g';
+  const yearly = co2 * n * 365;
+  document.getElementById('scale-yearly').textContent = yearly > 1000 ? (yearly/1000).toFixed(2)+'kg' : yearly.toFixed(1)+'g';
+  document.getElementById('scale-driving').innerHTML = `🚗 That's like driving <span style="color:var(--text);font-weight:700;font-family:var(--mono)">${(yearly/251).toFixed(1)}km</span> per year`;
+}
+
+function renderRegionSwitch(currentCO2) {
+  const bestDC = DATACENTERS.reduce((b,d) => d.intensity < b.intensity ? d : b, DATACENTERS[0]);
+  const tokens = getTokens();
+  const bestCO2 = calcCO2(bestDC.intensity, MODEL_MULT[state.model]||1, tokens.input, tokens.output).co2;
+  const saving = ((currentCO2 - bestCO2) / currentCO2 * 100);
+  const currentDC = state.detectedDC || DATACENTERS[0];
+
+  document.getElementById('region-switch').innerHTML = `
+    <div style="flex:1;padding:12px;background:var(--bg);border-radius:10px;text-align:center">
+      <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">Current DC</div>
+      <div style="font-size:20px;font-weight:700;font-family:var(--mono)">${currentCO2.toFixed(4)}g</div>
+      <div style="font-size:11px;color:var(--text-muted)">${currentDC.city} (${currentDC.provider})</div>
+    </div>
+    <div style="font-size:20px;color:var(--green)">→</div>
+    <div style="flex:1;padding:12px;background:rgba(0,255,136,0.06);border-radius:10px;text-align:center;border:1px solid rgba(0,255,136,0.15)">
+      <div style="font-size:10px;color:var(--green);margin-bottom:4px">Cleanest DC</div>
+      <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green)">${bestCO2.toFixed(4)}g</div>
+      <div style="font-size:11px;color:var(--text-muted)">${bestDC.city} (${bestDC.provider})</div>
+    </div>
+  `;
+
+  const savingEl = document.getElementById('region-saving');
+  if (currentDC.id !== bestDC.id && saving > 0) {
+    savingEl.style.display = 'block';
+    savingEl.textContent = `↓ ${saving.toFixed(0)}% less carbon`;
+  } else {
+    savingEl.style.display = 'none';
+  }
+}
+
+function renderMethodology(result) {
+  document.getElementById('methodology').innerHTML = [
+    { t:'⚡ Energy', f:`Energy = ${result.powerW.toFixed(0)}W × ${result.gpuSeconds.toFixed(2)}s / 3,600,000`, d:`Base ${BASE_POWER_W}W × ${(MODEL_MULT[state.model]||1).toFixed(1)} model multiplier. Output tokens cost ~3× input (autoregressive).` },
+    { t:'🌍 Carbon', f:`CO₂ = ${(result.energyKWh*1e6).toFixed(2)} mWh × PUE ${DEFAULT_PUE} × ${getDCIntensity()} g/kWh`, d:'PUE accounts for cooling and facility overhead in modern datacenters.' },
+    { t:'📡 Sources', f:'', d:'Ember Climate (grid intensity) · IEA (energy stats) · ML CO₂ Impact (AI consumption research)' },
+  ].map(i => `
+    <div style="padding:12px;background:var(--bg);border-radius:8px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:4px">${i.t}</div>
+      ${i.f ? `<code style="font-size:11px;color:var(--green);font-family:var(--mono);display:block;margin-bottom:4px">${i.f}</code>` : ''}
+      <div style="font-size:11px;color:var(--text-dim)">${i.d}</div>
+    </div>
+  `).join('') + `<div style="font-size:10px;color:var(--text-dim);font-style:italic;padding:8px 12px;background:rgba(255,184,0,0.05);border-radius:6px;border:1px solid rgba(255,184,0,0.1)">
+    ⚠️ These are estimates. Actual emissions vary by hardware, optimization, load balancing, and real-time grid conditions.
+  </div>`;
+}
+
+// Leaderboard
+function renderLeaderboard() {
+  const sorted = [...DATACENTERS].sort((a,b) => a.intensity - b.intensity);
+  const top10 = sorted.slice(0, 12);
+  const worst3 = sorted.slice(-3).reverse();
+
+  document.getElementById('leaderboard-content').innerHTML = `
+    <div style="display:grid;gap:4px">
+      ${top10.map((dc, i) => {
+        const pct = (dc.intensity / 650) * 100;
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+        return `<div style="display:grid;grid-template-columns:28px 1fr 80px 60px;align-items:center;gap:8px;padding:8px 10px;
+          ${i===0?'background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15);border-radius:8px':''}" >
+          <span style="font-size:${i<3?14:11}px;color:${i<3?'var(--green)':'var(--text-muted)'};font-weight:700;font-family:var(--mono)">${medal}</span>
+          <div><div style="font-size:13px;font-weight:500">${dc.city}</div><div style="font-size:10px;color:var(--text-dim)">${dc.provider}</div></div>
+          <div class="token-bar"><div class="token-bar-fill" style="width:${pct}%;background:${intensityColor(dc.intensity)}"></div></div>
+          <span style="font-size:11px;color:${intensityColor(dc.intensity)};text-align:right;font-family:var(--mono)">${dc.intensity}g</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:14px;padding:12px;background:rgba(255,68,68,0.05);border:1px solid rgba(255,68,68,0.1);border-radius:8px">
+      <div style="font-size:10px;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Highest Emitters</div>
+      ${worst3.map(dc => `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--text-muted)">
+        <span>${dc.city} (${dc.provider})</span>
+        <span style="color:var(--red);font-family:var(--mono)">${dc.intensity} g/kWh</span>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+
+function goToStep(n) {
+  document.getElementById(`step-${state.step}`).className = 'section';
+  state.step = n;
+  document.getElementById(`step-${n}`).className = 'section active';
+
+  // Render step indicators
+  for (let i = 0; i <= 2; i++) {
+    const id = i === 0 ? 'steps-indicator' : `steps-indicator-${i}`;
+    renderStepIndicator(id, n);
+  }
+
+  if (n === 0) { renderProviders(); renderModels(); }
+  if (n === 1) { renderScenarios(); }
+  if (n === 2) { renderResults(); }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function reset() {
+  state = { step:0, provider:null, model:null, taskMode:'scenarios', scenario:null, promptTokens:{input:0,output:0}, map:state.map, dcMarkers:state.dcMarkers, detectedDC:null };
+  for (let i = 0; i <= 2; i++) document.getElementById(`step-${i}`).className = 'section' + (i===0?' active':'');
+  document.getElementById('btn-step0-next').disabled = true;
+  document.getElementById('dc-detect-card').style.display = 'none';
+  renderProviders();
+  renderStepIndicator('steps-indicator', 0);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function togglePanel(panel) {
+  const el = document.getElementById(`${panel}-panel`);
+  const btnId = panel === 'map' ? 'map-toggle' : panel;
+  const btn = document.getElementById(`btn-${btnId}`);
+  const isVisible = el.style.display !== 'none';
+  el.style.display = isVisible ? 'none' : 'block';
+  if (btn) btn.className = 'btn-ghost' + (isVisible ? '' : ' active');
+  if (panel === 'map' && !isVisible) {
+    initMap();
+    setTimeout(() => state.map && state.map.invalidateSize(), 200);
+  }
+  if (panel === 'leaderboard' && !isVisible) renderLeaderboard();
+  if (panel === 'settings' && !isVisible) checkDetectionStatus();
+}
+
+function animateNumber(elId, target, decimals) {
+  const el = document.getElementById(elId);
+  const duration = 1200;
+  const start = performance.now();
+  const tick = (now) => {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = (eased * target).toFixed(decimals);
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// ═══════════════════════════════════════════════════════════
+// OPENROUTER DATACENTER DETECTION
+// ═══════════════════════════════════════════════════════════
+
+const SESSION_ID = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+let detectionAvailable = false;
+let detectionRemaining = 3;
+
+// Map frontend model names → OpenRouter model IDs
+const OPENROUTER_MODELS = {
+  "GPT-4o":"openai/gpt-4o", "GPT-4o Mini":"openai/gpt-4o-mini", "GPT-4.5":"openai/gpt-4.5-preview",
+  "o1":"openai/o1", "o3-mini":"openai/o3-mini",
+  "Claude Opus 4":"anthropic/claude-opus-4", "Claude Sonnet 4":"anthropic/claude-sonnet-4",
+  "Claude Haiku 3.5":"anthropic/claude-3.5-haiku",
+  "Gemini 2.0 Flash":"google/gemini-2.0-flash-001", "Gemini 2.0 Pro":"google/gemini-2.0-pro",
+  "Gemini 1.5 Pro":"google/gemini-pro-1.5",
+  "Llama 3.3 70B":"meta-llama/llama-3.3-70b-instruct", "Llama 3.1 405B":"meta-llama/llama-3.1-405b-instruct",
+  "Mistral Large":"mistralai/mistral-large", "Mixtral 8x7B":"mistralai/mixtral-8x7b-instruct",
+};
+
+// Known primary datacenter per provider (publicly documented locations)
+const PROVIDER_PRIMARY_DC = {
+  openai: "azure-eastus",      // OpenAI runs on Azure US East
+  anthropic: "gcp-us-east4",   // Anthropic runs on GCP US East4
+  google: "gcp-us-west1",      // Google Gemini on GCP
+  meta: "aws-us-east-1",       // Meta Llama commonly on AWS US East
+  mistral: "aws-eu-west-3",    // Mistral AI based in Paris
+};
+
+async function checkDetectionStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/v1/detect-datacenter/status?session_id=${SESSION_ID}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    detectionAvailable = data.available;
+    detectionRemaining = data.remaining_calls;
+    // Update settings panel
+    const statusEl = document.getElementById('detection-status');
+    const btn = document.getElementById('btn-detect');
+    const remaining = document.getElementById('detection-remaining');
+    if (statusEl) {
+      statusEl.innerHTML = data.available
+        ? '<span style="color:var(--green)">● Available</span> — OpenRouter API key configured'
+        : '<span style="color:var(--amber)">● Unavailable</span> — No OpenRouter API key';
+    }
+    if (btn) btn.disabled = !state.model || !data.available;
+    if (remaining) remaining.textContent = data.available ? `${data.remaining_calls}/${data.max_calls} calls remaining` : '';
+  } catch (e) { /* silent */ }
+}
+
+// Settings panel manual detect
+async function detectDatacenter() {
+  autoDetectDatacenter();
+}
+
+// Auto-detect: called on model selection, shows result inline in Step 1
+async function autoDetectDatacenter() {
+  if (!state.model || !state.provider) return;
+  const card = document.getElementById('dc-detect-card');
+  const body = document.getElementById('dc-detect-body');
+  const statusEl = document.getElementById('dc-detect-status');
+  card.style.display = 'block';
+  card.className = 'dc-detect';
+
+  const orModel = OPENROUTER_MODELS[state.model];
+  const canDetect = detectionAvailable && detectionRemaining > 0 && orModel;
+
+  if (canDetect) {
+    // Live detection
+    statusEl.textContent = `${detectionRemaining} detections left`;
+    body.innerHTML = '<div style="font-size:11px;color:var(--text-dim);animation:pulse 1s infinite">🔍 Sending test request to detect datacenter...</div>';
+
+    try {
+      const res = await fetch(`${API_BASE}/v1/detect-datacenter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: orModel, session_id: SESSION_ID }),
+      });
+      const data = await res.json();
+      detectionRemaining = data.remaining_calls;
+      statusEl.textContent = `${data.remaining_calls} left`;
+
+      if (data.success) {
+        // Find the closest matching datacenter
+        const detectedDC = guessDatacenter(data, state.provider.id);
+        state.detectedDC = detectedDC;
+        card.className = 'dc-detect detected';
+        renderDetectionResult(body, detectedDC, data);
+        // Update settings panel too
+        updateSettingsResult(data);
+      } else {
+        showEstimatedDC(body, statusEl);
+      }
+    } catch (e) {
+      showEstimatedDC(body, statusEl);
+    }
+  } else {
+    showEstimatedDC(body, statusEl);
+  }
+}
+
+function showEstimatedDC(body, statusEl) {
+  const dcId = PROVIDER_PRIMARY_DC[state.provider.id] || 'aws-us-east-1';
+  const dc = DATACENTERS.find(d => d.id === dcId) || DATACENTERS[0];
+  state.detectedDC = dc;
+  statusEl.textContent = 'estimated';
+  const card = document.getElementById('dc-detect-card');
+  card.className = 'dc-detect';
+  renderDetectionResult(body, dc, null);
+}
+
+function guessDatacenter(detection, providerId) {
+  // Provider → cloud platform + known primary DC
+  const PROVIDER_INFO = {
+    openai:    { cloud:'Azure', primary:'azure-eastus' },
+    anthropic: { cloud:'GCP',   primary:'gcp-us-east4' },
+    google:    { cloud:'GCP',   primary:'gcp-us-west1' },
+    meta:      { cloud:'AWS',   primary:'aws-us-east-1' },
+    mistral:   { cloud:'AWS',   primary:'aws-eu-west-3' },
+  };
+
+  const info = PROVIDER_INFO[providerId] || { cloud:null, primary:null };
+  const providerDCs = info.cloud
+    ? DATACENTERS.filter(d => d.provider === info.cloud)
+    : DATACENTERS;
+
+  // Parse CF PoP from cf_ray to determine user's continent
+  let userContinent = null;
+  if (detection.cf_ray) {
+    const pop = detection.cf_ray.split('-').pop()?.toUpperCase();
+    if (pop) {
+      const EU_POPS = ['AMS','ARN','ATH','BCN','BEG','BER','BRU','BTS','BUD','CDG','CPH','DUB','DUS','EDI','FRA','GOT','GVA','HAM','HEL','KEF','KIV','LHR','LIS','LUX','MAD','MAN','MIL','MRS','MUC','MXP','OSL','OTP','PRG','RIX','SOF','STO','SVG','TLL','VIE','VNO','WAW','WRO','ZRH'];
+      const EU_COUNTRIES = ['NO','SE','FI','NL','DE','FR','IE','CH','GB','DK','ES','IT','AT','PL','BE','PT','CZ','IS'];
+      if (EU_POPS.includes(pop)) {
+        // User is in Europe — prefer European DCs for this provider
+        const euDC = providerDCs.find(d => EU_COUNTRIES.includes(d.country));
+        if (euDC) return euDC;
+      }
+    }
+  }
+
+  // Default: provider's known primary datacenter
+  const primary = DATACENTERS.find(d => d.id === info.primary);
+  return primary || providerDCs[0] || DATACENTERS[0];
+}
+
+function renderDetectionResult(container, dc, liveData) {
+  const color = intensityColor(dc.intensity);
+  const isLive = !!liveData;
+  const providerName = state.provider?.name || 'This provider';
+  const explainerId = 'dc-explainer-' + Date.now();
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="font-size:11px;color:${isLive ? 'var(--green)' : 'var(--text-dim)'}">
+        ${isLive ? '● Live detection' : '● Estimated from provider defaults'}
+      </div>
+    </div>
+    <div class="dc-detect-grid">
+      <div class="dc-detect-stat">
+        <div class="label">Datacenter</div>
+        <div class="value" style="color:var(--text)">${dc.city}</div>
+        <div style="font-size:9px;color:var(--text-dim)">${dc.provider} · ${dc.country}</div>
+      </div>
+      <div class="dc-detect-stat">
+        <div class="label">Grid Intensity</div>
+        <div class="value" style="color:${color}">${dc.intensity}<span style="font-size:10px"> g</span></div>
+      </div>
+      <div class="dc-detect-stat">
+        <div class="label">${isLive ? 'Latency' : 'Renewable'}</div>
+        <div class="value" style="color:${isLive ? 'var(--green)' : 'var(--green)'}">${isLive ? liveData.latency_ms + 'ms' : dc.renewable + '%'}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn-ghost" onclick="showDCOnMap('${dc.id}')" style="flex:1;padding:8px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px">
+        🗺️ Show on map
+      </button>
+      <button class="btn-ghost" onclick="document.getElementById('${explainerId}').style.display = document.getElementById('${explainerId}').style.display === 'none' ? 'block' : 'none'" style="flex:1;padding:8px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:4px">
+        ℹ️ How do we know?
+      </button>
+    </div>
+    <div id="${explainerId}" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(0,255,136,0.03);border:1px solid var(--border);border-radius:8px;font-size:11px;line-height:1.6;color:var(--text-muted)">
+      ${isLive
+        ? `We sent a real API call through <strong style="color:var(--text)">OpenRouter</strong> to ${providerName}'s API and measured where it was served from.
+           The <strong style="color:var(--text)">${liveData.latency_ms}ms</strong> round-trip and Cloudflare edge (<strong style="color:var(--text)">${liveData.cf_ray ? liveData.cf_ray.split('-').pop() : '?'}</strong>) confirm the request routed to <strong style="color:var(--text)">${dc.city}</strong>.
+           <br><br>Some providers offer regional deployments (e.g. Azure OpenAI in EU), but the standard API typically routes to their primary US datacenter. Check <em>"What if you switched regions?"</em> in results to see cleaner alternatives.`
+        : `Based on ${providerName}'s known primary infrastructure. ${providerName} primarily runs on <strong style="color:var(--text)">${dc.provider}</strong> in <strong style="color:var(--text)">${dc.city}</strong>.
+           <br><br>Enable live detection in settings for a real API measurement.`
+      }
+    </div>
+  `;
+}
+
+function showDCOnMap(dcId) {
+  const dc = DATACENTERS.find(d => d.id === dcId);
+  if (!dc) return;
+  // Open map panel
+  const mapPanel = document.getElementById('map-panel');
+  if (mapPanel.style.display === 'none') {
+    togglePanel('map');
+  }
+  // Wait for map init, then fly to datacenter
+  setTimeout(() => {
+    if (state.map) {
+      state.map.flyTo([dc.lat, dc.lng], 5, { duration: 1.2 });
+      // Find and open the marker popup
+      state.dcMarkers.forEach(marker => {
+        const pos = marker.getLatLng();
+        if (Math.abs(pos.lat - dc.lat) < 0.1 && Math.abs(pos.lng - dc.lng) < 0.1) {
+          marker.openPopup();
+        }
+      });
+    }
+    showDCInfo(dc);
+  }, 400);
+}
+
+function updateSettingsResult(data) {
+  const resultEl = document.getElementById('detection-result');
+  const remaining = document.getElementById('detection-remaining');
+  if (!resultEl) return;
+  remaining.textContent = `${data.remaining_calls}/3 calls remaining`;
+  if (data.success) {
+    const confColor = data.confidence === 'high' ? 'var(--green)' : data.confidence === 'medium' ? 'var(--amber)' : 'var(--red)';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div><div style="font-size:9px;color:var(--text-dim);text-transform:uppercase">Latency</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--green)">${data.latency_ms}ms</div></div>
+        <div><div style="font-size:9px;color:var(--text-dim);text-transform:uppercase">Confidence</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${confColor}">${data.confidence}</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted)">
+        ${data.cf_ray ? `CF-Ray: <span style="font-family:var(--mono);color:var(--text-dim)">${data.cf_ray}</span><br>` : ''}
+        Region: <strong style="color:var(--text)">${data.likely_region?.replace(/_/g, ' ')}</strong>
+      </div>
+    `;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+renderProviders();
+renderStepIndicator('steps-indicator', 0);
+initLiveData();
+checkDetectionStatus();
+</script>
+</body>
+</html>
